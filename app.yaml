@@ -1,0 +1,38 @@
+application: graphfetch
+version: latest
+runtime: python27
+api_version: 1
+threadsafe: true
+
+
+skip_files:
+- ^(.*/)?#.*#
+- ^(.*/)?.*~
+- ^(.*/)?.*\.py[co]
+- ^(.*/)?.*/RCS/.*
+- ^(.*/)?\..*
+- ^(.*/)?tests$
+- ^(.*/)?test$
+- ^Makefile
+- ^COPYING.LESSER
+- ^README.md
+- \.gitignore
+- ^\.git/.*
+- \.*\.lint$
+
+builtins:
+- appstats: on #/_ah/stats/
+- remote_api: on #/_ah/remote_api/
+
+handlers:
+- url: /.*
+  script: main.app
+#  secure: always
+
+libraries:
+- name: jinja2
+  version: "2.6"
+- name: webapp2
+  version: "2.5.1"
+- name: markupsafe
+  version: "0.15"
