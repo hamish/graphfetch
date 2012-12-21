@@ -65,6 +65,7 @@ class QueryRequestHandler(webapp2.RequestHandler):
             for detail in order.orderdetails:
                 self.response.write("%d of %s, " %(detail.quantity, detail.product.name) )
             self.response.write(")<br>")
+        self.response.write("<a href='/'>Return to Start</a>")
 class A1QueryRequestHandler(webapp2.RequestHandler):
     def get(self, id):
         a1=testmodels.get_a1(long(id))
@@ -85,6 +86,7 @@ class A1QueryRequestHandler(webapp2.RequestHandler):
         self.response.write((", ".join((o.name) for o in a1.d3s)) + "<br>")
         self.response.write((", ".join((o.name) for o in a1.d4s)) + "<br>")
         self.response.write((", ".join((o.name) for o in a1.d5s)) + "<br>")
+        self.response.write("<a href='/'>Return to Start</a>")
 class CreateRequestHandler(webapp2.RequestHandler):
     def get(self):
         # create test data
@@ -113,18 +115,26 @@ class CreateRequestHandler(webapp2.RequestHandler):
 
 class HomeRequestHandler(webapp2.RequestHandler):
     def get(self):
+        self.response.write("<a href='/assertions/'>Assertions</a><br>")
         self.response.write("<a href='/create/'>Create Test Data</a><hr>")
         customers = Customer.query().fetch()
         for customer in customers:
             self.response.write("<a href='/query/%d'>Query Data for customer %s</a><br>" % (customer.key.id(), customer.name))
         a1s = testmodels.A1.query().fetch()
         for a1 in a1s:
-            self.response.write("<a href='/querya1/%d'>Query A1: %d" % (a1.key.id(), a1.key.id()))
+            self.response.write("<a href='/querya1/%d'>Query A1: %s" % (a1.key.id(), a1.name)
 
-
+class AssertionsRequestHandler(webapp2.RequestHandler):
+    def assert_list_empty(self, list):
+        if length(list) > 0:
+            self.response.write("List Length")
+    def get(self):
+        self.response.write("<a href='/'>Return to Start</a>")
+        
 app = webapp2.WSGIApplication([
            RedirectRoute('/', HomeRequestHandler, name='home', strict_slash=True),
            RedirectRoute('/create/', CreateRequestHandler, name='create', strict_slash=True),
+           RedirectRoute('/assertions/', AssertionsRequestHandler, name='create', strict_slash=True),
            RedirectRoute('/query/<customer_id>', QueryRequestHandler, name='query', strict_slash=True),
            RedirectRoute('/querya1/<id>', A1QueryRequestHandler, name='query-a1', strict_slash=True),
 ])

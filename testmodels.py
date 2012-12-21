@@ -3,6 +3,7 @@ from google.appengine.ext import ndb
 # A-D a broad model - A has 5 children of each type:
 # B[1-5] is SOURCE_LIST, C[1-5] is SOURCE_KEY, D[1-5] is TARGET_KEY
 class A1(ndb.Model):
+    name=ndb.StringProperty()
     b1_keys=ndb.KeyProperty(repeated=True)
     b2_keys=ndb.KeyProperty(repeated=True)
     b3_keys=ndb.KeyProperty(repeated=True)
@@ -70,6 +71,7 @@ def get_a1(id):
     a1_fetch.attach(kind=D5, attachment_type=graphfetch.TARGET_KEY)
     keys=[ndb.Key(A1,id)]
     return graphfetch.get_graph(a1_fetch, keys=keys)[0]
+
 def populate_test_data():
     #Create 5 of all B and C classes
     to_put = []
@@ -86,7 +88,7 @@ def populate_test_data():
     to_put.append(C5(name="C5" ))
     child_objs = ndb.put_multi(to_put)
     # create an A1
-    a1 = A1()
+    a1 = A1(name="Full Graph")
     for i in range(5):
         a1.b1_keys.append(child_objs.pop(0))
         a1.b2_keys.append(child_objs.pop(0))
