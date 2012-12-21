@@ -68,8 +68,23 @@ class QueryRequestHandler(webapp2.RequestHandler):
 class A1QueryRequestHandler(webapp2.RequestHandler):
     def get(self, id):
         a1=testmodels.get_a1(long(id))
-        for b1 in a1.b1s:
-            self.response.write("B1: %s"% b1.name)
+        self.response.write((", ".join((o.name) for o in a1.b1s)) + "<br>")
+        self.response.write((", ".join((o.name) for o in a1.b2s)) + "<br>")
+        self.response.write((", ".join((o.name) for o in a1.b3s)) + "<br>")
+        self.response.write((", ".join((o.name) for o in a1.b4s)) + "<br>")
+        self.response.write((", ".join((o.name) for o in a1.b5s)) + "<br>")
+        
+        self.response.write(a1.c1.name + "<br>")
+        self.response.write(a1.c2.name + "<br>")
+        self.response.write(a1.c3.name + "<br>")
+        self.response.write(a1.c4.name + "<br>")
+        self.response.write(a1.c5.name + "<br>")
+
+        self.response.write((", ".join((o.name) for o in a1.d1s)) + "<br>")
+        self.response.write((", ".join((o.name) for o in a1.d2s)) + "<br>")
+        self.response.write((", ".join((o.name) for o in a1.d3s)) + "<br>")
+        self.response.write((", ".join((o.name) for o in a1.d4s)) + "<br>")
+        self.response.write((", ".join((o.name) for o in a1.d5s)) + "<br>")
 class CreateRequestHandler(webapp2.RequestHandler):
     def get(self):
         # create test data
