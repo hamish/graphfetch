@@ -122,11 +122,11 @@ class HomeRequestHandler(webapp2.RequestHandler):
             self.response.write("<a href='/query/%d'>Query Data for customer %s</a><br>" % (customer.key.id(), customer.name))
         a1s = testmodels.A1.query().fetch()
         for a1 in a1s:
-            self.response.write("<a href='/querya1/%d'>Query A1: %s" % (a1.key.id(), a1.name)
+            self.response.write("<a href='/querya1/%d'>Query A1: %s<br>" % (a1.key.id(), a1.name))
 
 class AssertionsRequestHandler(webapp2.RequestHandler):
     def assert_list_empty(self, list):
-        if length(list) > 0:
+        if len(list) > 0:
             self.response.write("List Length")
     def get(self):
         self.response.write("<a href='/'>Return to Start</a>")

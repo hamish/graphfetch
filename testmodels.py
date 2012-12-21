@@ -110,3 +110,6 @@ def populate_test_data():
         to_put.append(D4(name="D4_%d" % i, a1_key=a1.key))
         to_put.append(D5(name="D5_%d" % i, a1_key=a1.key))
     ndb.put_multi(to_put)
+    
+    a1=A1(name="Empty Graph")
+    a1.put()
