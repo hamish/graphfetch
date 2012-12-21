@@ -75,11 +75,11 @@ class A1QueryRequestHandler(webapp2.RequestHandler):
         self.response.write((", ".join((o.name) for o in a1.b4s)) + "<br>")
         self.response.write((", ".join((o.name) for o in a1.b5s)) + "<br>")
         
-        self.response.write(a1.c1.name + "<br>")
-        self.response.write(a1.c2.name + "<br>")
-        self.response.write(a1.c3.name + "<br>")
-        self.response.write(a1.c4.name + "<br>")
-        self.response.write(a1.c5.name + "<br>")
+        if a1.c1: self.response.write(a1.c1.name + "<br>")
+        if a1.c2: self.response.write(a1.c2.name + "<br>")
+        if a1.c3: self.response.write(a1.c3.name + "<br>")
+        if a1.c4: self.response.write(a1.c4.name + "<br>")
+        if a1.c5: self.response.write(a1.c5.name + "<br>")
 
         self.response.write((", ".join((o.name) for o in a1.d1s)) + "<br>")
         self.response.write((", ".join((o.name) for o in a1.d2s)) + "<br>")
