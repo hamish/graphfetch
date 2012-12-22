@@ -150,6 +150,39 @@ def populate_target_key_lists_for_values(values, attachments):
     else:
         populate_target_key_lists(values, attachments)
 
+def recurse_attachment_with_future(attachment, futures, value):
+    future = futures.pop(0)
+    if attachment.attachment_type==SOURCE_KEY:
+        if len(future)>0:
+            future=future[0]
+        else:
+            setattr(value,attachment.name, None)
+            return
+    target_values=get_graph(attachment.target_fetch, future=future)
+    setattr(value, attachment.name, target_values)
+
+def add_attachment_future(attachment, futures, value):    
+    keys = getattr(value, attachment.key_name)
+    if attachment.attachment_type == SOURCE_KEY:
+        if keys is not None:
+            keys=[keys]
+        else:
+            keys=[]
+    future = get_futures_from_keys(attachment.target_fetch, keys)
+    futures.append(future)
+def apply(attachments, futures, values, func):
+    for a in attachments:
+        if isinstance(values, types.ListType):
+            for source in values:
+                func(a,futures,source)
+        else:
+            func(a,futures,values)
+            
+def recurse_attachments_with_future(attachments, futures, values):
+    return apply(attachments, futures, values, func=recurse_attachment_with_future)
+def add_attachment_futures(attachments, futures, values):
+    return apply(attachments, futures, values, func=add_attachment_future)
+                
 def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=None):
 #    log_future = "None"
 #    if future is not None:
@@ -181,45 +214,11 @@ def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=
     # Start any queries that could not be started earlier 
     if keys is None:
         target_key_futures = get_target_key_futures(fetch, k)
-    def add_attachment_future(attachment, futures, value):    
-        keys = getattr(value, attachment.key_name)
-        if attachment.attachment_type == SOURCE_KEY:
-            if keys is not None:
-                keys=[keys]
-            else:
-                keys=[]
-        future = get_futures_from_keys(attachment.target_fetch, keys)
-        futures.append(future)
-    def add_attachment_futures(attachments, futures, values):
-        for a in attachments:
-            if isinstance(values, types.ListType):
-                for source in values:
-                    add_attachment_future(a,futures,source)
-            else:
-                add_attachment_future(a,futures,values)
 
     add_attachment_futures(fetch.source_key_attachments, source_key_futures, values)
     add_attachment_futures(fetch.source_list_attachments, source_list_futures, values)
     
     populate_target_key_lists_for_values(values, fetch.target_key_attachments)
-
-    def recurse_attachment_with_future(attachment, futures, value):
-        future = futures.pop(0)
-        if attachment.attachment_type==SOURCE_KEY:
-            if len(future)>0:
-                future=future[0]
-            else:
-                setattr(value,attachment.name, None)
-                return
-        target_values=get_graph(attachment.target_fetch, future=future)
-        setattr(value, attachment.name, target_values)
-    def recurse_attachments_with_future(attachments, futures, values):
-        for a in attachments:
-            if isinstance(values, types.ListType):
-                for source in values:
-                    recurse_attachment_with_future(a,futures,source)
-            else:
-                recurse_attachment_with_future(a,futures,values)
             
     recurse_attachments_with_future(fetch.source_key_attachments, source_key_futures, values)
     recurse_attachments_with_future(fetch.source_list_attachments, source_list_futures, values)
