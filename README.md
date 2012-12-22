@@ -1,30 +1,31 @@
 graphfetch
 ==========
 
-Allows appengine python programmers to retrieve a graph of related objects. 
+Allows appengine python programmers to retrieve a graph of related objects. The current 
+implementation uses the ndb async methods to attempt to do as much work in parallel as possible.
 
 
 Imagine the following Models
 
-class Invoice(ndb.Model):
-    line_keys = ndb.KeyProperty(repeated=True)
-    customer_key = ndb.KeyProperty()
-    invoice_number=model.StringProperty()
-    
-class Instruction(ndb.Model):
-    invoice_key=ndb.KeyProperty()
-    text = ndb.TextProperty()
-
-class Customer(ndb.Model):
-    name=ndb.StringProperty()
-
-class Line(ndb.Model):
-    item=ndb.KeyProperty()
-    quantity=ndb.IntergerProperty()
-
-class Item(ndb.Model):
-    name=ndb.KeyProperty()
-    tag_keys = ndb.KeyProperty(repeated=True)
+	class Invoice(ndb.Model):
+	    line_keys = ndb.KeyProperty(repeated=True)
+	    customer_key = ndb.KeyProperty()
+	    invoice_number=model.StringProperty()
+	
+	class Instruction(ndb.Model):
+	    invoice_key=ndb.KeyProperty()
+	    text = ndb.TextProperty()
+	
+	class Customer(ndb.Model):
+	    name=ndb.StringProperty()
+	
+	class Line(ndb.Model):
+	    item=ndb.KeyProperty()
+	    quantity=ndb.IntergerProperty()
+	
+	class Item(ndb.Model):
+	    name=ndb.KeyProperty()
+	    tag_keys = ndb.KeyProperty(repeated=True)
 
 Assume for the moment that there is a good reason to have InvoiceLines and Instructions as separate 
 entities, and not repeated StructuredPropertys on Invoice.

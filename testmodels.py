@@ -69,8 +69,8 @@ def get_a1(id):
     a1_fetch.attach(kind=D3, attachment_type=graphfetch.TARGET_KEY)
     a1_fetch.attach(kind=D4, attachment_type=graphfetch.TARGET_KEY)
     a1_fetch.attach(kind=D5, attachment_type=graphfetch.TARGET_KEY)
-    keys=[ndb.Key(A1,id)]
-    return graphfetch.get_graph(a1_fetch, keys=keys)[0]
+    key=ndb.Key(A1,id)
+    return graphfetch.get_graph(a1_fetch, keys=key)
 
 def populate_test_data():
     #Create 5 of all B and C classes

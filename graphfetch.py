@@ -101,14 +101,19 @@ def get_futures_from_qry(fetch, key_filter, additional_filter=None):
 
 def get_futures_from_keys(fetch, keys):
     futures=[]
-    if keys is not None and len(keys)>0:
+    if isinstance(keys, types.ListType):
         futures = ndb.get_multi_async(keys)
+    else:
+        futures = keys.get_async()
     return futures
 
 def get_target_key_futures(fetch, keys):
     target_key_futures=[]
     for a in fetch.target_key_attachments:
-        key_filter = ndb.GenericProperty(a.key_name).IN(keys)
+        if isinstance(keys, types.ListType):
+            key_filter = ndb.GenericProperty(a.key_name).IN(keys)
+        else: 
+            key_filter = ndb.GenericProperty(a.key_name) == keys
         future = get_futures_from_qry(a.target_fetch,key_filter=key_filter, additional_filter=a.additional_filter)
         target_key_futures.append(future)
     return target_key_futures
@@ -184,13 +189,6 @@ def add_attachment_futures(attachments, futures, values):
     return apply(attachments, futures, values, func=add_attachment_future)
                 
 def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=None):
-#    log_future = "None"
-#    if future is not None:
-#        log_future="F"
-#    if isinstance(future, types.ListType):
-#        log_future="List"
-#    logging.info("get_graph: fetch:%s, future:%s, keys:%s, key_filter:%s, additional_filter:%s" %(fetch, log_future, keys, key_filter, additional_filter))
-    
     # If the datastore retrieve for this iteration is not already running, get it started now.
     value_future = get_value_future(fetch, future, keys, key_filter, additional_filter)
 
@@ -218,27 +216,9 @@ def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=
     add_attachment_futures(fetch.source_key_attachments, source_key_futures, values)
     add_attachment_futures(fetch.source_list_attachments, source_list_futures, values)
     
-    populate_target_key_lists_for_values(values, fetch.target_key_attachments)
-            
+    populate_target_key_lists_for_values(values, fetch.target_key_attachments)            
     recurse_attachments_with_future(fetch.source_key_attachments, source_key_futures, values)
     recurse_attachments_with_future(fetch.source_list_attachments, source_list_futures, values)
-                
-#    for source in values:
-#        for a in fetch.source_list_attachments:
-#            keys = getattr(source, a.key_name)
-#             this is not using futures!
-#            target_values = get_graph(a.target_fetch, keys=keys)
-#            future = source_list_futures.pop(0)
-#            target_values=get_graph(a.target_fetch, future=future)
-#            setattr(source, a.name, target_values)
-#        for a in fetch.source_key_attachments:
-#            #key = getattr(source, a.key_name)
-##            target_value = get_graph(a.target_fetch, keys=(key,))[0]
-#            future=source_key_futures.pop(0)
-#            logging.info("source_keyfutures.pop(0)")
-#            target_value=get_graph(a.target_fetch, future=future[0])
-#            setattr(source, a.name, target_value)
-            
         
     for a in fetch.target_key_attachments:
         future = target_key_futures.pop(0)
@@ -254,15 +234,3 @@ def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=
             target_attr.append(value)        
         
     return values
-
-#def get_demo_article(article_id):
-#    keys=[ndb.Key(Article, long(article_id)), ]
-#    articleFetch = Fetch(kind=Article)
-#    articleFetch.attach(kind=Student, attachment_type=SOURCE_LIST)
-#    articleFetch.attach(kind=CurriculumItem, attachment_type=SOURCE_LIST, name='learningoutcome', key_name='learningoutcome_keys')
-#    articleFetch.attach(kind=Comment, attachment_type=TARGET_KEY, key_name='article', additional_filter=Comment.hidden==False)
-#    articleFetch.attach(kind=ArticlePicture, attachment_type=TARGET_KEY, key_name='article')
-#    articleFetch.attach(kind=Kindergarten, attachment_type=SOURCE_KEY)
-#    articleFetch.attach(kind=Group, attachment_type=SOURCE_KEY)
-#    return get_graph(articleFetch, keys=keys)[0]
-    
