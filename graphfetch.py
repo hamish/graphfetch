@@ -96,6 +96,7 @@ def get_futures_from_qry(fetch, key_filter, additional_filter=None):
     qry = fetch.kind.query(key_filter)
     if additional_filter is not None:
         qry=qry.filter(additional_filter)
+    logging.info("get_futures_from_qry: %s" % str(qry))
     values=qry.fetch_async()
     return values
 
@@ -111,8 +112,10 @@ def get_target_key_futures(fetch, keys):
     target_key_futures=[]
     for a in fetch.target_key_attachments:
         if isinstance(keys, types.ListType):
+            logging.info("get_target_key_futures: %s" % keys)
             key_filter = ndb.GenericProperty(a.key_name).IN(keys)
         else: 
+            logging.info("Keys = %s" % str(keys))
             key_filter = ndb.GenericProperty(a.key_name) == keys
         future = get_futures_from_qry(a.target_fetch,key_filter=key_filter, additional_filter=a.additional_filter)
         target_key_futures.append(future)
@@ -121,14 +124,18 @@ def get_target_key_futures(fetch, keys):
 def get_value_future(fetch, future, keys, key_filter, additional_filter):
     value_future = None
     if future is not None:
+        logging.info("gvf: future")
         value_future = future
     elif keys is not None:
+        logging.info("gvf: keys")
         value_future=get_futures_from_keys(fetch, keys)
-    elif filter is not None:
+    elif key_filter is not None:
+        logging.info("gvf: key_filter")
         value_future= get_futures_from_qry(fetch, key_filter, additional_filter)
     else:
         raise Exception("get_graph: you must pass one of future, keys or key_filter")
     return value_future
+
 def get_key_dict(values):
     if isinstance(values, types.ListType):
         return dict((v.key,v) for v in values)
@@ -139,9 +146,12 @@ def get_key_dict(values):
 
 def get_keys(values):
     if isinstance(values, types.ListType):
-        return (v.key for v in values)
+        keys =[]
+        for v in values:
+            keys.append(v.key)
+        return keys
     else:
-        return [values.key,]
+        return [values.key]
 
 def populate_target_key_lists(source, attachments):
     for a in attachments:
@@ -164,6 +174,7 @@ def recurse_attachment_with_future(attachment, futures, value):
             setattr(value,attachment.name, None)
             return
     target_values=get_graph(attachment.target_fetch, future=future)
+    logging.info("setting %s" % attachment.name)
     setattr(value, attachment.name, target_values)
 
 def add_attachment_future(attachment, futures, value):    
@@ -200,10 +211,11 @@ def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=
     # Note that we are doing the query for the set of objects in one go, we will assign them
     # to appropriate objects after retrieval.
     if keys is not None:
+        logging.info("Early target_key")
         target_key_futures = get_target_key_futures(fetch, keys)
 
     # wait for the current objects to be available, then do any transformations to them.
-    values=get_values_from_future(value_future) 
+    values=get_values_from_future(value_future)
     values = transform_model_list(values)
     
     k = get_keys(values)
@@ -211,6 +223,7 @@ def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=
     
     # Start any queries that could not be started earlier 
     if keys is None:
+        logging.info("Late target_key: %s" % k)
         target_key_futures = get_target_key_futures(fetch, k)
 
     add_attachment_futures(fetch.source_key_attachments, source_key_futures, values)

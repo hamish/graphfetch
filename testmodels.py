@@ -1,4 +1,7 @@
+import logging
 from google.appengine.ext import ndb
+import graphfetch
+
 
 # A-D a broad model - A has 5 children of each type:
 # B[1-5] is SOURCE_LIST, C[1-5] is SOURCE_KEY, D[1-5] is TARGET_KEY
@@ -51,8 +54,7 @@ class D5(ndb.Model):
     a1_key=ndb.KeyProperty()
     name=ndb.StringProperty()
 
-def get_a1(id):
-    import graphfetch
+def get_a1_fullfetch():
     a1_fetch=graphfetch.Fetch(A1)
     a1_fetch.attach(kind=B1, attachment_type=graphfetch.SOURCE_LIST)
     a1_fetch.attach(kind=B2, attachment_type=graphfetch.SOURCE_LIST)
@@ -69,8 +71,20 @@ def get_a1(id):
     a1_fetch.attach(kind=D3, attachment_type=graphfetch.TARGET_KEY)
     a1_fetch.attach(kind=D4, attachment_type=graphfetch.TARGET_KEY)
     a1_fetch.attach(kind=D5, attachment_type=graphfetch.TARGET_KEY)
+    return a1_fetch
+
+def get_a1_by_key(id):
+    a1_fetch = get_a1_fullfetch()
     key=ndb.Key(A1,id)
     return graphfetch.get_graph(a1_fetch, keys=key)
+
+def get_a1(id):
+    a1_fetch = get_a1_fullfetch()
+    key=ndb.Key(A1,long(id))
+    key_filter = A1.key == key
+    logging.info(key_filter)
+    return graphfetch.get_graph(a1_fetch, key_filter=key_filter)[0]
+    
 
 def populate_test_data():
     #Create 5 of all B and C classes
