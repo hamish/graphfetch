@@ -5,9 +5,9 @@ Allows appengine python programmers to retrieve a set of related ndb datastore o
 ## Background
 When I first started using ndb, I found myself doing things like invoice.customer.get().name in my template code. This seemed to be a bad idea(tm).
 
-I started creating custom code to manually stitch results together, this worked a lot better - particularly in the templates, but I ended up with a lot more code to maintain than I wanted. This is also when I deveoped the pattern of using identifier_key for KeyProperties and identifier_keys for repeated Key Properties so that identifier and identifiers were available on the object to attache the target objects and lists.
+I started creating custom code to manually stitch results together, this worked a lot better - particularly in the templates, but I ended up with a lot more code to maintain than I wanted. This is also when I developed the pattern of using identifier_key for KeyProperties and identifier_keys for repeated Key Properties so that identifier and identifiers were available on the object to attache the target objects and lists.
 
-In an effort to reduce the amount of code I have to support, I have consolodated the code that retrieves datastore objects into the graphfetch library. It alows the user to specify what child (or target) objects should also be available when a top level object is retrieved.
+In an effort to reduce the amount of code I have to support, I have consolidated the code that retrieves datastore objects into the graphfetch library. It allows the user to specify what child (or target) objects should also be available when a top level object is retrieved.
 
 
 ## Overview
@@ -30,7 +30,7 @@ class Source(ndb.Model):
 class Target(ndb.Model):
 	pass
 ```
-A nieve implementation of this attachment would be source.targets = ndb.get_multi(source.target_keys)
+A naive implementation of this attachment would be source.targets = ndb.get_multi(source.target_keys)
 
 ### SOURCE_KEY
 A single key is stored on the source object. Results in a single object (or None) being attached to the source object.
@@ -43,7 +43,7 @@ class Target(ndb.Model):
 	pass
 ```
 
-A nieve implementation of this attachment would be source.target = source.target_key.get()
+A naive implementation of this attachment would be source.target = source.target_key.get()
 
 ### TARGET_KEY
 A single key is stored on the target object. This is the more standard pattern in relational databases where repeated properties are not commonly used. Results in a list being attached to the source object.
@@ -56,10 +56,10 @@ class Target(ndb.Model):
 	source_key=ndb.KeyProperty(kind=Target)
 ```
 
-A nieve implementation of this attachemnt would be source.targets = Target.query(Target.source_key==source.key).fetch()
+A naive implementation of this attachment would be source.targets = Target.query(Target.source_key==source.key).fetch()
 
 ## Fetch Graph
-The fetch graph defines the objects that should be retreived. The interface is as folows.
+The fetch graph defines the objects that should be retrieved. The interface is as follows.
 ```python
 class Fetch():
     def __init__(self, kind):
@@ -76,7 +76,7 @@ The parameter meanings are:
 * name: The name of the attribute on the parent object to attache the child object to.
 * key_name: The name of the data model attribute to be used to locate the chil object.
 * additional_filter: ndb filter that can further restrict the objects attached. This is only used with TARGET_KEY attachments.
-* order: The attribute on Taget to order the results by. This is only used with TARGET_KEY attachemnts.
+* order: The attribute on target to order the results by. This is only used with TARGET_KEY attachments.
 
 #### Default Values
 * name: Defaults to target_kind.lower() or target_kind.lower() + 's' if the attachment results in a list.
@@ -95,6 +95,19 @@ name would default to 'target' and key_name would default to 'target_key'
 fetch.attach(Target, TARGET_KEY)
 ```
 name would default to 'targets' and key_name would default to 'source_key'
+## get_graph
+The final stage is to call the get_graph method. 
+```python
+def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=None, order=None):
+```
+* fetch: the top level fetch object
+* future: Not generally used externally. The result of an async ndb method. 
+* keys: A Key or list of Keys that represent the top level object(s).
+* key_filter: An ndb filter that will select the top level object(s).
+* additional_filter: Not generally used externally. Additional filter to be applied to the query.
+* order: The attribute to order the results by. Only used with query style (key_filter) methods. 
+
+keys, key_filter and future are mutually exclusive.
 
 ## An Example:
 Imagine the following Models
@@ -138,18 +151,7 @@ if invoice.instructions:
 	    print "%s\n" % instruction.text
 ```
 
-In order to define what objects to Retrieve, it is necessary to create a Fetch graph. The implementaion of Fetch looks a bit like this:
-
-```python
-class Fetch():
-    def __init__(self, kind):
-        self.kind = kind
-    def attach(self, kind, attachment_type, name=None, key_name=None, additional_filter=None):
-        ...
-        return child_fetch
-```
-
-The completed get_invoice method looks like this:
+Create a fetch graph and call get_graph.
 ```python
 def get_invoice(invoice_id):
 	invoice_fetch = Fetch(kind=Invoice)
@@ -164,8 +166,7 @@ def get_invoice(invoice_id):
 
 ## Performance 
 
-Graphfetch uses the ndb async methods to execute as much of the datastore activity in parallel as possible. A future enhancement hamish/graphfetch#1  aims to provide a tasklet based implementation which may be faster in some situations.
+Graphfetch uses the ndb async methods to execute as much of the datastore activity in parallel as possible. Performance appears to be very good. A future enhancement #1 aims to provide a tasklet based implementation which may be faster in some complex situations.
 
 graphfetch does not set aside the need for thoughtful data model design. 
-
 
