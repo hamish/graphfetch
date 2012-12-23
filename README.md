@@ -31,7 +31,7 @@ A nieve implementation of this attachemnt would be source.target = source.target
 
 TARGET_KEY
 ==========
-A single key is stored on the target object. This is the more standard pattern in relational databases where repeated properties are not commonly used. eg invoice_key on Instruction.
+A single key is stored on the target object. This is the more standard pattern in relational databases where repeated properties are not commonly used.
 
     class Source(ndb.Model):
     	pass
