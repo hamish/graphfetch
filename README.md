@@ -7,7 +7,7 @@ implementation uses the ndb async methods to attempt to do as much work in paral
 Graphfetch allows the source model to be linked to the target model in 3 possible ways:
 
 SOURCE_LIST
----
+==========
 Keys are stored in a repeated key property on the parent (source) object in the relationship. 
     class Source(ndb.Model):
     	target_keys=ndb.KeyProperty(kind=Target, repeated=True)
@@ -18,7 +18,7 @@ Keys are stored in a repeated key property on the parent (source) object in the 
 A nieve implementation of this attachemnt would be source.targets = ndb.get_multi(source.target_keys)
 
 SOURCE_KEY
----
+==========
 A single key is stored on the source object.
 
     class Source(ndb.Model):
@@ -30,7 +30,7 @@ A single key is stored on the source object.
 A nieve implementation of this attachemnt would be source.target = source.target_key.get()
 
 TARGET_KEY
----
+==========
 A single key is stored on the target object. This is the more standard pattern in relational databases where repeated properties are not commonly used. eg invoice_key on Instruction.
 
     class Source(ndb.Model):
