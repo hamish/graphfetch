@@ -164,7 +164,7 @@ def get_invoice(invoice_id):
 
 ## Performance 
 
-Graphfetch uses the ndb async methods to execute as much of the datastore activity in parallel as possible. A future enhancement ( #1 ) aims to provide a tasklet based implementation which may be faster in some situations.
+Graphfetch uses the ndb async methods to execute as much of the datastore activity in parallel as possible. A future enhancement ( hamish/graphfetch#1 ) aims to provide a tasklet based implementation which may be faster in some situations.
 
 graphfetch does not set aside the need for thoughtful data model design. 
 
