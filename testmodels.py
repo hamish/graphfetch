@@ -66,11 +66,11 @@ def get_a1_fullfetch():
     a1_fetch.attach(kind=C3, attachment_type=graphfetch.SOURCE_KEY)
     a1_fetch.attach(kind=C4, attachment_type=graphfetch.SOURCE_KEY)
     a1_fetch.attach(kind=C5, attachment_type=graphfetch.SOURCE_KEY)
-    a1_fetch.attach(kind=D1, attachment_type=graphfetch.TARGET_KEY)
-    a1_fetch.attach(kind=D2, attachment_type=graphfetch.TARGET_KEY)
-    a1_fetch.attach(kind=D3, attachment_type=graphfetch.TARGET_KEY)
-    a1_fetch.attach(kind=D4, attachment_type=graphfetch.TARGET_KEY)
-    a1_fetch.attach(kind=D5, attachment_type=graphfetch.TARGET_KEY)
+    a1_fetch.attach(kind=D1, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
+    a1_fetch.attach(kind=D2, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
+    a1_fetch.attach(kind=D3, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
+    a1_fetch.attach(kind=D4, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
+    a1_fetch.attach(kind=D5, attachment_type=graphfetch.TARGET_KEY, order=-D1.name)
     return a1_fetch
 
 def get_a1_by_key(id):

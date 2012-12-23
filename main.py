@@ -125,10 +125,23 @@ class HomeRequestHandler(webapp2.RequestHandler):
             self.response.write("<a href='/querya1/%d'>Query A1: %s<br>" % (a1.key.id(), a1.name))
 
 class AssertionsRequestHandler(webapp2.RequestHandler):
+    def asert_same(self, actual, expected, label):
+        if actual==expected:
+            self.response.write("")
+
     def assert_list_empty(self, list):
         if len(list) > 0:
             self.response.write("List Length")
+
     def get(self):
+        full_a1 = testmodels.A1.query(testmodels.A1.name=="Full Graph").fetch()
+        if full_a1:
+            full_a1=full_a1[0]
+        else:
+            self.response.write("no A1 with name 'Full Graph' found - have you populated the database?")
+        a1=testmodels.get_a1(full_a1.key.id())
+        
+        
         self.response.write("<a href='/'>Return to Start</a>")
         
 app = webapp2.WSGIApplication([

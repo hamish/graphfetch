@@ -41,13 +41,14 @@ TARGET_KEY='TARGET_KEY'
 SOURCE_KEY='SOURCE_KEY'
 
 class Attachment():
-    def __init__(self, target_fetch, name, key_name, attachment_type, additional_filter=None):
+    def __init__(self, target_fetch, name, key_name, attachment_type, additional_filter=None, order=None):
         #logging.info("Attachment: %s %s %s %s" %(target_fetch, name, key_name, additional_filter))
         self.target_fetch = target_fetch
         self.name=name
         self.key_name=key_name
         self.additional_filter=additional_filter
         self.attachment_type=attachment_type
+        self.order=order
 
 class Fetch():
     def __init__(self, kind):
@@ -56,7 +57,7 @@ class Fetch():
         self.target_key_attachments=[]
         self.source_key_attachments=[]
         
-    def attach(self, kind, attachment_type, name=None, key_name=None, additional_filter=None):
+    def attach(self, kind, attachment_type, name=None, key_name=None, additional_filter=None, order=None):
         target_fetch = Fetch(kind)
         kind_name=kind.__name__.lower()
         if attachment_type == SOURCE_LIST:
@@ -64,20 +65,20 @@ class Fetch():
                 name="%ss" % kind_name
             if key_name is None:
                 key_name = "%s_keys" % kind_name
-            self.source_list_attachments.append(Attachment(target_fetch, name, key_name, attachment_type))
+            self.source_list_attachments.append(Attachment(target_fetch, name, key_name, attachment_type, additional_filter, order))
         elif attachment_type == TARGET_KEY:
             if name is None:
                 name="%ss" % kind_name
             if key_name is None:
                 source_kind_name = self.kind.__name__.lower()
                 key_name="%s_key" % source_kind_name
-            self.target_key_attachments.append(Attachment(target_fetch, name, key_name, attachment_type))
+            self.target_key_attachments.append(Attachment(target_fetch, name, key_name, attachment_type, additional_filter, order))
         elif attachment_type== SOURCE_KEY:
             if name is None:
                 name="%s" % kind_name
             if key_name is None:
                 key_name = "%s_key" % kind_name
-            self.source_key_attachments.append(Attachment(target_fetch, name, key_name, attachment_type))
+            self.source_key_attachments.append(Attachment(target_fetch, name, key_name, attachment_type, additional_filter, order))
         else:
             raise Exception("Fetch.attach called with invalid type parameter: [%s]" %(attachment_type))
         return target_fetch
@@ -92,10 +93,12 @@ def get_values_from_future(future):
         values=future.get_result()
     return values
 
-def get_futures_from_qry(fetch, key_filter, additional_filter=None):
+def get_futures_from_qry(fetch, key_filter, additional_filter=None, order=None):
     qry = fetch.kind.query(key_filter)
     if additional_filter is not None:
         qry=qry.filter(additional_filter)
+    if order is not None:
+        qry=qry.order(order)
     logging.info("get_futures_from_qry: %s" % str(qry))
     values=qry.fetch_async()
     return values
@@ -117,7 +120,7 @@ def get_target_key_futures(fetch, keys):
         else: 
             logging.info("Keys = %s" % str(keys))
             key_filter = ndb.GenericProperty(a.key_name) == keys
-        future = get_futures_from_qry(a.target_fetch,key_filter=key_filter, additional_filter=a.additional_filter)
+        future = get_futures_from_qry(a.target_fetch,key_filter=key_filter, additional_filter=a.additional_filter, order=a.order)
         target_key_futures.append(future)
     return target_key_futures
 
@@ -199,7 +202,7 @@ def recurse_attachments_with_future(attachments, futures, values):
 def add_attachment_futures(attachments, futures, values):
     return apply(attachments, futures, values, func=add_attachment_future)
                 
-def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=None):
+def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=None, order=None):
     # If the datastore retrieve for this iteration is not already running, get it started now.
     value_future = get_value_future(fetch, future, keys, key_filter, additional_filter)
 
