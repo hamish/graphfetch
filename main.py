@@ -41,11 +41,11 @@ class Order(ndb.Model):
     
 # utility Methods
 def get_order(order_key):
-    fetch = graphfetch.Fetch(kind=Order)
+    fetch = graphfetch.FetchDefinition(kind=Order)
     fetch.attach(kind=OrderDetail, attachment_type=graphfetch.SOURCE_LIST)
 
 def get_customer_with_orders_and_details(customer_key):
-    customer_fetch = graphfetch.Fetch(Customer)
+    customer_fetch = graphfetch.FetchDefinition(Customer)
     order_fetch = customer_fetch.attach(Order, graphfetch.TARGET_KEY)
     detail_fetch = order_fetch.attach(OrderDetail, graphfetch.SOURCE_LIST)
     product_fetch = detail_fetch.attach(Product, graphfetch.SOURCE_KEY)

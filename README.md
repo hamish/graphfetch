@@ -13,8 +13,8 @@ In an effort to reduce the amount of code I have to support, I have consolidated
 ## Overview
 To use graphfetch, 
 
-1. Construct the Fetch graph which defines what objects should be retreived.
-2. call get_graph with the fetch and either the keys of the objects to retrieve, or the filter to use with a query.
+1. Construct the FetchDefinition graph which defines what objects should be retreived.
+2. call get_graph with the fetch definition and either the keys of the objects to retrieve, or the filter to use with a query.
 
 The current implementation uses the ndb async methods to attempt to do as much work in parallel as possible, reducing the elapsed time to fetch the objects. 
 
@@ -58,23 +58,24 @@ class Target(ndb.Model):
 
 A naive implementation of this attachment would be source.targets = Target.query(Target.source_key==source.key).fetch()
 
-## Fetch Graph
-The fetch graph defines the objects that should be retrieved. The interface is as follows.
+## FetchDefinition Graph
+The fetch definition graph defines the objects that should be retrieved. The interface is as follows.
 ```python
-class Fetch():
+class FetchDefinition():
     def __init__(self, kind):
         self.kind = kind
     def attach(self, kind, attachment_type, name=None, key_name=None, additional_filter=None, order=None):
+    	child_fd=FetchDefinition(...)
         ...
-        return child_fetch
+        return child_fd
 ```
-The usual pattern is to create a fetch, and then use the attach method to create and attach child fetches. The child fetches are returned from the attach method so that child fetches can be attached to other child fetches.
+The usual pattern is to create a fetch definition, and then use the attach method to create and attach child fetch definitions. The child fetch definitions are returned from the attach method so that they can also have child fetch definitions.
 
 The parameter meanings are:
 * kind: The class of the child object being attached
 * attachment_type: One of SOURCE_LIST, SOURCE_KEY or TARGET_KEY
 * name: The name of the attribute on the parent object to attache the child object to.
-* key_name: The name of the data model attribute to be used to locate the chil object.
+* key_name: The name of the data model attribute to be used to locate the child object.
 * additional_filter: ndb filter that can further restrict the objects attached. This is only used with TARGET_KEY attachments.
 * order: The attribute on target to order the results by. This is only used with TARGET_KEY attachments.
 
@@ -83,24 +84,25 @@ The parameter meanings are:
 * key_name: Defaults to target_kind.lower + '_key' for SOURCE_KEY, source_kind.lower() ='_key' for  TARGET_KEY and target_kind.lower() = '_keys' for SOURCE_KEY Attachments. 
 eg:
 ```python
-fetch = Fetch(Source)
-fetch.attach(Target, SOURCE_LIST)
+fd = FetchDefinition(Source)
+fd.attach(Target, SOURCE_LIST)
 ```
 name would default to 'targets' and key_name would default to 'target_keys'
 ```python
-fetch.attach(Target, SOURCE_KEY)
+fd.attach(Target, SOURCE_KEY)
 ```
 name would default to 'target' and key_name would default to 'target_key'
 ```python
-fetch.attach(Target, TARGET_KEY)
+fd.attach(Target, TARGET_KEY)
 ```
 name would default to 'targets' and key_name would default to 'source_key'
-## get_graph
+
+## fetch
 The final stage is to call the get_graph method. 
 ```python
-def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=None, order=None):
+def fetch(fetch_definition, future=None, keys=None, key_filter=None, additional_filter=None, order=None):
 ```
-* fetch: the top level fetch object
+* fetch_definition: the top level fetch object
 * future: Not generally used externally. The result of an async ndb method. 
 * keys: A Key or list of Keys that represent the top level object(s).
 * key_filter: An ndb filter that will select the top level object(s).
@@ -132,9 +134,7 @@ class Line(ndb.Model):
     item=ndb.KeyProperty(kind=Item)
     quantity=ndb.IntergerProperty()
 ```
-
-Assume for the moment that there is a good reason to have InvoiceLines and Instructions as separate 
-entities, and not repeated StructuredPropertys on Invoice.
+Assume for the moment that there is a good reason to have a datamodel that looks like this (I can't think of one.)
 
 The goal is to be able to retrieve an invoice and also all associated objects, such that the
 following code works:
@@ -154,7 +154,7 @@ if invoice.instructions:
 Create a fetch graph and call get_graph.
 ```python
 def get_invoice(invoice_id):
-	invoice_fetch = Fetch(kind=Invoice)
+	invoice_fetch = FetchDefinition(kind=Invoice)
 	invoice_fetch.attach(kind=Customer, attachment_type=SOURCE_KEY)
 	invoice_fetch.attach(kind=Instruction, attachment_TYPE=TARGET_KEY)
 	line_fetch = invoice_fetch.attach(kind=Line, attachment_type=SOURCE_LIST)

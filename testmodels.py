@@ -54,36 +54,36 @@ class D5(ndb.Model):
     a1_key=ndb.KeyProperty()
     name=ndb.StringProperty()
 
-def get_a1_fullfetch():
-    a1_fetch=graphfetch.Fetch(A1)
-    a1_fetch.attach(kind=B1, attachment_type=graphfetch.SOURCE_LIST)
-    a1_fetch.attach(kind=B2, attachment_type=graphfetch.SOURCE_LIST)
-    a1_fetch.attach(kind=B3, attachment_type=graphfetch.SOURCE_LIST)
-    a1_fetch.attach(kind=B4, attachment_type=graphfetch.SOURCE_LIST)
-    a1_fetch.attach(kind=B5, attachment_type=graphfetch.SOURCE_LIST)
-    a1_fetch.attach(kind=C1, attachment_type=graphfetch.SOURCE_KEY)
-    a1_fetch.attach(kind=C2, attachment_type=graphfetch.SOURCE_KEY)
-    a1_fetch.attach(kind=C3, attachment_type=graphfetch.SOURCE_KEY)
-    a1_fetch.attach(kind=C4, attachment_type=graphfetch.SOURCE_KEY)
-    a1_fetch.attach(kind=C5, attachment_type=graphfetch.SOURCE_KEY)
-    a1_fetch.attach(kind=D1, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
-    a1_fetch.attach(kind=D2, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
-    a1_fetch.attach(kind=D3, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
-    a1_fetch.attach(kind=D4, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
-    a1_fetch.attach(kind=D5, attachment_type=graphfetch.TARGET_KEY, order=-D1.name)
-    return a1_fetch
+def get_a1_fullfetchdef():
+    a1_fd=graphfetch.FetchDefinition(A1)
+    a1_fd.attach(kind=B1, attachment_type=graphfetch.SOURCE_LIST)
+    a1_fd.attach(kind=B2, attachment_type=graphfetch.SOURCE_LIST)
+    a1_fd.attach(kind=B3, attachment_type=graphfetch.SOURCE_LIST)
+    a1_fd.attach(kind=B4, attachment_type=graphfetch.SOURCE_LIST)
+    a1_fd.attach(kind=B5, attachment_type=graphfetch.SOURCE_LIST)
+    a1_fd.attach(kind=C1, attachment_type=graphfetch.SOURCE_KEY)
+    a1_fd.attach(kind=C2, attachment_type=graphfetch.SOURCE_KEY)
+    a1_fd.attach(kind=C3, attachment_type=graphfetch.SOURCE_KEY)
+    a1_fd.attach(kind=C4, attachment_type=graphfetch.SOURCE_KEY)
+    a1_fd.attach(kind=C5, attachment_type=graphfetch.SOURCE_KEY)
+    a1_fd.attach(kind=D1, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
+    a1_fd.attach(kind=D2, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
+    a1_fd.attach(kind=D3, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
+    a1_fd.attach(kind=D4, attachment_type=graphfetch.TARGET_KEY, order=D1.name)
+    a1_fd.attach(kind=D5, attachment_type=graphfetch.TARGET_KEY, order=-D1.name)
+    return a1_fd
 
 def get_a1_by_key(id):
-    a1_fetch = get_a1_fullfetch()
+    a1_fd = get_a1_fullfetchdef()
     key=ndb.Key(A1,id)
-    return graphfetch.get_graph(a1_fetch, keys=key)
+    return graphfetch.get_graph(a1_fd, keys=key)
 
 def get_a1(id):
-    a1_fetch = get_a1_fullfetch()
+    a1_fd = get_a1_fullfetchdef()
     key=ndb.Key(A1,long(id))
     key_filter = A1.key == key
     logging.info(key_filter)
-    return graphfetch.get_graph(a1_fetch, key_filter=key_filter)[0]
+    return graphfetch.get_graph(a1_fd, key_filter=key_filter)[0]
     
 
 def populate_test_data():
