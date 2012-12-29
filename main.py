@@ -52,7 +52,7 @@ def get_customer_with_orders_and_details(customer_key):
     
     keys=[customer_key]
 
-    customer = graphfetch.get_graph(customer_fetch, keys=keys)[0]
+    customer = graphfetch.fetch(customer_fetch, keys=keys)[0]
     return customer
 #Handlers
 class QueryRequestHandler(webapp2.RequestHandler):

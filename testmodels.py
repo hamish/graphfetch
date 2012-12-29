@@ -76,14 +76,14 @@ def get_a1_fullfetchdef():
 def get_a1_by_key(id):
     a1_fd = get_a1_fullfetchdef()
     key=ndb.Key(A1,id)
-    return graphfetch.get_graph(a1_fd, keys=key)
+    return graphfetch.fetch(a1_fd, keys=key)
 
 def get_a1(id):
     a1_fd = get_a1_fullfetchdef()
     key=ndb.Key(A1,long(id))
     key_filter = A1.key == key
     logging.info(key_filter)
-    return graphfetch.get_graph(a1_fd, key_filter=key_filter)[0]
+    return graphfetch.fetch(a1_fd, key_filter=key_filter)[0]
     
 
 def populate_test_data():

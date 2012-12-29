@@ -1,5 +1,5 @@
 from google.appengine.ext import ndb
-from graphfetch import SOURCE_KEY, SOURCE_LIST, TARGET_KEY, FetchDefinition, get_graph
+from graphfetch import SOURCE_KEY, SOURCE_LIST, TARGET_KEY, FetchDefinition, fetch
 class Invoice(ndb.Model):
     line_keys = ndb.KeyProperty(repeated=True)
     customer_key = ndb.KeyProperty()
@@ -27,7 +27,7 @@ def get_invoice(invoice_id):
     line_fd = invoice_fd.attach(kind=Line, attachment_type=SOURCE_LIST)
     line_fd.attach(kind=Item, attachment_type=SOURCE_KEY)
     key= ndb.Key(Invoice, invoice_id)
-    return get_graph(invoice_fd, keys=key)
+    return fetch(invoice_fd, keys=key)
                          
 def example_code(invoice_id):
     invoice = get_invoice(invoice_id)

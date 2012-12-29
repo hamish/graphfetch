@@ -49,9 +49,9 @@ class FetchDefinition():
         self.source_key_attachments=[]
         
     class Attachment():
-        def __init__(self, target_fetch, name, key_name, attachment_type, additional_filter=None, order=None):
-            #logging.info("Attachment: %s %s %s %s" %(target_fetch, name, key_name, additional_filter))
-            self.target_fetch = target_fetch
+        def __init__(self, target_fd, name, key_name, attachment_type, additional_filter=None, order=None):
+            #logging.info("Attachment: %s %s %s %s" %(target_fd, name, key_name, additional_filter))
+            self.target_fd = target_fd
             self.name=name
             self.key_name=key_name
             self.additional_filter=additional_filter
@@ -59,30 +59,30 @@ class FetchDefinition():
             self.order=order
         
     def attach(self, kind, attachment_type, name=None, key_name=None, additional_filter=None, order=None):
-        target_fetch = FetchDefinition(kind)
+        target_fd = FetchDefinition(kind)
         kind_name=kind.__name__.lower()
         if attachment_type == SOURCE_LIST:
             if name is None:
                 name="%ss" % kind_name
             if key_name is None:
                 key_name = "%s_keys" % kind_name
-            self.source_list_attachments.append(FetchDefinition.Attachment(target_fetch, name, key_name, attachment_type, additional_filter, order))
+            self.source_list_attachments.append(FetchDefinition.Attachment(target_fd, name, key_name, attachment_type, additional_filter, order))
         elif attachment_type == TARGET_KEY:
             if name is None:
                 name="%ss" % kind_name
             if key_name is None:
                 source_kind_name = self.kind.__name__.lower()
                 key_name="%s_key" % source_kind_name
-            self.target_key_attachments.append(FetchDefinition.Attachment(target_fetch, name, key_name, attachment_type, additional_filter, order))
+            self.target_key_attachments.append(FetchDefinition.Attachment(target_fd, name, key_name, attachment_type, additional_filter, order))
         elif attachment_type== SOURCE_KEY:
             if name is None:
                 name="%s" % kind_name
             if key_name is None:
                 key_name = "%s_key" % kind_name
-            self.source_key_attachments.append(FetchDefinition.Attachment(target_fetch, name, key_name, attachment_type, additional_filter, order))
+            self.source_key_attachments.append(FetchDefinition.Attachment(target_fd, name, key_name, attachment_type, additional_filter, order))
         else:
             raise Exception("Fetch.attach called with invalid type parameter: [%s]" %(attachment_type))
-        return target_fetch
+        return target_fd
 
 def get_values_from_future(future):
     values=[]    
@@ -94,8 +94,8 @@ def get_values_from_future(future):
         values=future.get_result()
     return values
 
-def get_futures_from_qry(fetch, key_filter, additional_filter=None, order=None):
-    qry = fetch.kind.query(key_filter)
+def get_futures_from_qry(fd, key_filter, additional_filter=None, order=None):
+    qry = fd.kind.query(key_filter)
     if additional_filter is not None:
         qry=qry.filter(additional_filter)
     if order is not None:
@@ -104,7 +104,7 @@ def get_futures_from_qry(fetch, key_filter, additional_filter=None, order=None):
     values=qry.fetch_async()
     return values
 
-def get_futures_from_keys(fetch, keys):
+def get_futures_from_keys(fd, keys):
     futures=[]
     if isinstance(keys, types.ListType):
         futures = ndb.get_multi_async(keys)
@@ -112,32 +112,32 @@ def get_futures_from_keys(fetch, keys):
         futures = keys.get_async()
     return futures
 
-def get_target_key_futures(fetch, keys):
+def get_target_key_futures(fd, keys):
     target_key_futures=[]
-    for a in fetch.target_key_attachments:
+    for a in fd.target_key_attachments:
         if isinstance(keys, types.ListType):
             logging.info("get_target_key_futures: %s" % keys)
             key_filter = ndb.GenericProperty(a.key_name).IN(keys)
         else: 
             logging.info("Keys = %s" % str(keys))
             key_filter = ndb.GenericProperty(a.key_name) == keys
-        future = get_futures_from_qry(a.target_fetch,key_filter=key_filter, additional_filter=a.additional_filter, order=a.order)
+        future = get_futures_from_qry(a.target_fd,key_filter=key_filter, additional_filter=a.additional_filter, order=a.order)
         target_key_futures.append(future)
     return target_key_futures
 
-def get_value_future(fetch, future, keys, key_filter, additional_filter):
+def get_value_future(fd, future, keys, key_filter, additional_filter):
     value_future = None
     if future is not None:
         logging.info("gvf: future")
         value_future = future
     elif keys is not None:
         logging.info("gvf: keys")
-        value_future=get_futures_from_keys(fetch, keys)
+        value_future=get_futures_from_keys(fd, keys)
     elif key_filter is not None:
         logging.info("gvf: key_filter")
-        value_future= get_futures_from_qry(fetch, key_filter, additional_filter)
+        value_future= get_futures_from_qry(fd, key_filter, additional_filter)
     else:
-        raise Exception("get_graph: you must pass one of future, keys or key_filter")
+        raise Exception("fd: you must pass one of future, keys or key_filter")
     return value_future
 
 def get_key_dict(values):
@@ -177,7 +177,7 @@ def recurse_attachment_with_future(attachment, futures, value):
         else:
             setattr(value,attachment.name, None)
             return
-    target_values=get_graph(attachment.target_fetch, future=future)
+    target_values=fetch(attachment.target_fd, future=future)
     logging.info("setting %s" % attachment.name)
     setattr(value, attachment.name, target_values)
 
@@ -188,7 +188,7 @@ def add_attachment_future(attachment, futures, value):
             keys=[keys]
         else:
             keys=[]
-    future = get_futures_from_keys(attachment.target_fetch, keys)
+    future = get_futures_from_keys(attachment.target_fd, keys)
     futures.append(future)
 def apply(attachments, futures, values, func):
     for a in attachments:
@@ -203,9 +203,9 @@ def recurse_attachments_with_future(attachments, futures, values):
 def add_attachment_futures(attachments, futures, values):
     return apply(attachments, futures, values, func=add_attachment_future)
                 
-def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=None, order=None):
+def fetch(fd, future=None, keys=None, key_filter=None, additional_filter=None, order=None):
     # If the datastore retrieve for this iteration is not already running, get it started now.
-    value_future = get_value_future(fetch, future, keys, key_filter, additional_filter)
+    value_future = get_value_future(fd, future, keys, key_filter, additional_filter)
 
     target_key_futures=[]
     source_list_futures=[]
@@ -216,7 +216,7 @@ def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=
     # to appropriate objects after retrieval.
     if keys is not None:
         logging.info("Early target_key")
-        target_key_futures = get_target_key_futures(fetch, keys)
+        target_key_futures = get_target_key_futures(fd, keys)
 
     # wait for the current objects to be available, then do any transformations to them.
     values=get_values_from_future(value_future)
@@ -228,18 +228,18 @@ def get_graph(fetch, future=None, keys=None, key_filter=None, additional_filter=
     # Start any queries that could not be started earlier 
     if keys is None:
         logging.info("Late target_key: %s" % k)
-        target_key_futures = get_target_key_futures(fetch, k)
+        target_key_futures = get_target_key_futures(fd, k)
 
-    add_attachment_futures(fetch.source_key_attachments, source_key_futures, values)
-    add_attachment_futures(fetch.source_list_attachments, source_list_futures, values)
+    add_attachment_futures(fd.source_key_attachments, source_key_futures, values)
+    add_attachment_futures(fd.source_list_attachments, source_list_futures, values)
     
-    populate_target_key_lists_for_values(values, fetch.target_key_attachments)            
-    recurse_attachments_with_future(fetch.source_key_attachments, source_key_futures, values)
-    recurse_attachments_with_future(fetch.source_list_attachments, source_list_futures, values)
+    populate_target_key_lists_for_values(values, fd.target_key_attachments)            
+    recurse_attachments_with_future(fd.source_key_attachments, source_key_futures, values)
+    recurse_attachments_with_future(fd.source_list_attachments, source_list_futures, values)
         
-    for a in fetch.target_key_attachments:
+    for a in fd.target_key_attachments:
         future = target_key_futures.pop(0)
-        target_values = get_graph(a.target_fetch,future=future)
+        target_values = fetch(a.target_fd,future=future)
         for value in target_values:
             source_key = getattr(value, a.key_name)
             source = values_dict[source_key]
