@@ -14,7 +14,7 @@ In an effort to reduce the amount of code I have to support, I have consolidated
 To use graphfetch, 
 
 1. Construct the FetchDefinition graph which defines what objects should be retreived.
-2. call get_graph with the fetch definition and either the keys of the objects to retrieve, or the filter to use with a query.
+2. call fetch with the fetch definition and either the keys of the objects to retrieve, or the filter to use with a query.
 
 The current implementation uses the ndb async methods to attempt to do as much work in parallel as possible, reducing the elapsed time to fetch the objects. 
 
@@ -98,7 +98,7 @@ fd.attach(Target, TARGET_KEY)
 name would default to 'targets' and key_name would default to 'source_key'
 
 ## fetch
-The final stage is to call the get_graph method. 
+The final stage is to call the fetch method. 
 ```python
 def fetch(fetch_definition, future=None, keys=None, key_filter=None, additional_filter=None, order=None):
 ```
@@ -151,7 +151,7 @@ if invoice.instructions:
 	    print "%s\n" % instruction.text
 ```
 
-Create a fetch graph and call get_graph.
+Create a fetch graph and call fetch.
 ```python
 def get_invoice(invoice_id):
 	invoice_fetch = FetchDefinition(kind=Invoice)
@@ -160,7 +160,7 @@ def get_invoice(invoice_id):
 	line_fetch = invoice_fetch.attach(kind=Line, attachment_type=SOURCE_LIST)
 	line_fetch.attach(kind=Item, attachment_type=SOURCE_KEY)
 	key=ndb.Key(Invoice, invoice_id)
-	return get_graph(invoice_fetch, keys)
+	return fetch(invoice_fetch, keys)
 ```
 
 
@@ -169,4 +169,15 @@ def get_invoice(invoice_id):
 Graphfetch uses the ndb async methods to execute as much of the datastore activity in parallel as possible. Performance appears to be very good. A future enhancement #1 aims to provide a tasklet based implementation which may be faster in some complex situations.
 
 graphfetch does not set aside the need for thoughtful data model design. 
+
+## Issues
+Please report any issues that you find in github.
+
+## Future work
+
+* Comprehensive testing
+* Performance improvements
+* Pagination for top level fetches
+
+
 
