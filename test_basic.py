@@ -1,8 +1,11 @@
 import os
 import sys
 import unittest
+import types
 import logging
 from graphfetch import fetch, FetchDefinition
+import testmodels
+from google.appengine.ext import ndb
 
 class GraphFetchTests(unittest.TestCase):
     def setUp(self):
@@ -30,6 +33,7 @@ class GraphFetchTests(unittest.TestCase):
             rate = ndb.IntegerProperty()
             tags = ndb.StringProperty(repeated=True)
         self.create_entities()
+        testmodels.populate_test_data()
         
     def tearDown(self):
         self.testbed.deactivate()
@@ -42,26 +46,26 @@ class GraphFetchTests(unittest.TestCase):
         self.moe = Foo(name='moe', rate=1)
         self.moe.put()
 
+class BasicFetchTests(GraphFetchTests):
+
     def testBasicQuery(self):
         fd = FetchDefinition(Foo)
         foo = fetch(fd, key_filter=Foo.name=='joe')[0]
         self.assertEqual(foo.name, 'joe', "name incorrect")
 
     def testBasicKeyList(self):
-        
         fd = FetchDefinition(Foo)
         foo = fetch(fd, key_filter=Foo.name=='joe')[0]
         self.assertEqual(foo.name, 'joe', "name incorrect")
-#
-#if __name__ == '__main__':
-#    # Add the appengine sdk to the python path. Note that this is very specific to my machine (a mac)
-#    dev_appserver = '/usr/local/bin/dev_appserver.py'
-#    dev_appserver_realpath = os.path.realpath(dev_appserver)
-#    dev_appserver_realdir = os.path.split(dev_appserver_realpath)[0]
-#    logging.info("adding path: %s" % dev_appserver_realdir)
-#    sys.path.append(dev_appserver_realdir)
-#    sys.path.append("%s/%s" % (dev_appserver_realdir , 'yaml/lib'))
-#    
-#    
-#    unittest.main()
 
+    def testFullGraph(self):
+        fd=testmodels.get_a1_fullfetchdef()
+        filter=testmodels.A1.name=='Full Graph'
+        results=fetch(fd, key_filter=filter)
+        self.assertTrue(isinstance(results, types.ListType), "results should be a list")
+        self.assertEqual(len(results), 1, "too many results")
+        a1=results[0]
+        self.assertTrue(isinstance(a1.b1s, types.ListType), "a1.b1s is not a list")
+        self.assertFalse(isinstance(a1.c1, types.ListType), "a1.c1 is not a list")
+        self.assertTrue(isinstance(a1.d1s, types.ListType), "a1.d1s is not a list")
+        
