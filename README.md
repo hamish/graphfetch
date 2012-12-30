@@ -170,6 +170,15 @@ Graphfetch uses the ndb async methods to execute as much of the datastore activi
 
 graphfetch does not set aside the need for thoughtful data model design. 
 
+## Testing
+Execute the unit tests by navigating into the graphfetch directory and then executing the following:
+```
+python testrunner.py ~/bin/google_appengine .
+```
+replacing ~/bin/google_appengine with the location of the appengine sdk on your machine.
+
+There is a CI running against the main version of graphfetch:
+https://travis-ci.org/hamish/graphfetch
 ## Issues
 Please report any issues that you find in github.
 
