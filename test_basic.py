@@ -46,6 +46,7 @@ class GraphFetchTests(unittest.TestCase):
         self.moe = Foo(name='moe', rate=1)
         self.moe.put()
 
+
 class BasicFetchTests(GraphFetchTests):
 
     def testBasicQuery(self):
@@ -58,6 +59,16 @@ class BasicFetchTests(GraphFetchTests):
         foo = fetch(fd, key_filter=Foo.name=='joe')[0]
         self.assertEqual(foo.name, 'joe', "name incorrect")
 
+    def assertAllAreType(self, o, names, type):
+        for name in names:
+            val = getattr(o,name)
+            self.assertTrue(isinstance(val, type), "attribute %s is not %s" %(name, type))
+    def assertAllAreLength(self, o, names, length):
+        for name in names:
+            val = getattr(o,name)
+            val_len = len(val)
+            self.assertTrue(val_len == length, "attribute %s length is %d  not %d" %(name, val_len, length))
+        
     def testFullGraph(self):
         fd=testmodels.get_a1_fullfetchdef()
         filter=testmodels.A1.name=='Full Graph'
@@ -65,7 +76,17 @@ class BasicFetchTests(GraphFetchTests):
         self.assertTrue(isinstance(results, types.ListType), "results should be a list")
         self.assertEqual(len(results), 1, "too many results")
         a1=results[0]
-        self.assertTrue(isinstance(a1.b1s, types.ListType), "a1.b1s is not a list")
-        self.assertFalse(isinstance(a1.c1, types.ListType), "a1.c1 is not a list")
-        self.assertTrue(isinstance(a1.d1s, types.ListType), "a1.d1s is not a list")
-        
+
+        b_names = ["b%ds"%i for i in range(1,6)]
+        self.assertAllAreType(a1, b_names, types.ListType)
+        self.assertAllAreLength(a1, b_names, 5)
+
+        c_names = ["c%d"%i for i in range(1,6)]
+        self.assertAllAreType(a1, c_names, ndb.Model)
+        # c attributes have no length - so no assertAllAreLength
+
+        d_names = ["d%ds"%i for i in range(1,6)]
+        self.assertAllAreType(a1, d_names, types.ListType)
+        self.assertAllAreLength(a1, d_names, 5)
+
+
