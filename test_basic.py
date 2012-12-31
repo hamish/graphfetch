@@ -53,6 +53,7 @@ class BasicFetchTests(GraphFetchTests):
         fd = FetchDefinition(Foo)
         foo = fetch(fd, key_filter=Foo.name=='joe')[0]
         self.assertEqual(foo.name, 'joe', "name incorrect")
+        self.assertEqual(foo.id, foo.key.id(), "foo.id should be set to the value of foo.key.id(). Is transform_model working?")
 
     def testBasicKeyList(self):
         fd = FetchDefinition(Foo)
@@ -89,4 +90,24 @@ class BasicFetchTests(GraphFetchTests):
         self.assertAllAreType(a1, d_names, types.ListType)
         self.assertAllAreLength(a1, d_names, 5)
 
+    def testCustomTransformMoodel(self):
+        def custom_transform(o):
+            o.testattr=True
+            return o
+        fd=testmodels.get_a1_fullfetchdef()
+        filter=testmodels.A1.name=='Full Graph'
+        results=fetch(fd, key_filter=filter, transform=custom_transform)
+        
+        a1=results[0]
+        self.assertTrue(a1.testattr, "testattr should be set to true by custom_transform")
+        self.assertFalse(hasattr(a1,'id'), "id attribute has been set even though the custom transform was used.")
 
+        # also test for models deeper in the graph
+        self.assertTrue(a1.b1s[0].testattr, "testattr should be set to true by custom_transform")
+        self.assertFalse(hasattr(a1.b1s[0],'id'), "id attribute has been set even though the custom transform was used.")
+
+        self.assertTrue(a1.c1.testattr, "testattr should be set to true by custom_transform")
+        self.assertFalse(hasattr(a1.c1,'id'), "id attribute has been set even though the custom transform was used.")
+
+        self.assertTrue(a1.d1s[0].testattr, "testattr should be set to true by custom_transform")
+        self.assertFalse(hasattr(a1.d1s[0],'id'), "id attribute has been set even though the custom transform was used.")

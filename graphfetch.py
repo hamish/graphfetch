@@ -27,11 +27,11 @@ def transform_model(instance):
         value = getattr(instance, key)
     return instance
 
-def transform_model_list(entities):
+def transform_model_list(entities, transform=transform_model):
     if isinstance(entities, types.ListType):
-        return [transform_model(e) for e in entities]
+        return [transform(e) for e in entities]
     else:
-        return transform_model(entities)
+        return transform(entities)
 
 def transform_futures_list(futures):
     return [transform_model(f.get_result()) for f in futures]
@@ -169,7 +169,7 @@ def populate_target_key_lists_for_values(values, attachments):
     else:
         populate_target_key_lists(values, attachments)
 
-def recurse_attachment_with_future(attachment, futures, value):
+def recurse_attachment_with_future(attachment, futures, value, transform=transform_model):
     future = futures.pop(0)
     if attachment.attachment_type==SOURCE_KEY:
         if len(future)>0:
@@ -177,7 +177,7 @@ def recurse_attachment_with_future(attachment, futures, value):
         else:
             setattr(value,attachment.name, None)
             return
-    target_values=fetch(attachment.target_fd, future=future)
+    target_values=fetch(attachment.target_fd, future=future,transform=transform)
     logging.info("setting %s" % attachment.name)
     setattr(value, attachment.name, target_values)
 
@@ -190,20 +190,20 @@ def add_attachment_future(attachment, futures, value):
             keys=[]
     future = get_futures_from_keys(attachment.target_fd, keys)
     futures.append(future)
-def apply(attachments, futures, values, func):
+def apply(attachments, futures, values, func, kwargs):
     for a in attachments:
         if isinstance(values, types.ListType):
             for source in values:
-                func(a,futures,source)
+                func(a,futures,source, **kwargs)
         else:
-            func(a,futures,values)
+            func(a,futures,values, **kwargs)
             
-def recurse_attachments_with_future(attachments, futures, values):
-    return apply(attachments, futures, values, func=recurse_attachment_with_future)
+def recurse_attachments_with_future(attachments, futures, values, transform=transform_model):
+    return apply(attachments, futures, values, recurse_attachment_with_future, {'transform':transform})
 def add_attachment_futures(attachments, futures, values):
-    return apply(attachments, futures, values, func=add_attachment_future)
+    return apply(attachments, futures, values, add_attachment_future,{})
                 
-def fetch(fd, future=None, keys=None, key_filter=None, additional_filter=None, order=None):
+def fetch(fd, future=None, keys=None, key_filter=None, additional_filter=None, order=None, transform=transform_model):
     # If the datastore retrieve for this iteration is not already running, get it started now.
     value_future = get_value_future(fd, future, keys, key_filter, additional_filter)
 
@@ -220,7 +220,7 @@ def fetch(fd, future=None, keys=None, key_filter=None, additional_filter=None, o
 
     # wait for the current objects to be available, then do any transformations to them.
     values=get_values_from_future(value_future)
-    values = transform_model_list(values)
+    values = transform_model_list(values, transform=transform)
     
     k = get_keys(values)
     values_dict=get_key_dict(values)
@@ -233,13 +233,16 @@ def fetch(fd, future=None, keys=None, key_filter=None, additional_filter=None, o
     add_attachment_futures(fd.source_key_attachments, source_key_futures, values)
     add_attachment_futures(fd.source_list_attachments, source_list_futures, values)
     
-    populate_target_key_lists_for_values(values, fd.target_key_attachments)            
-    recurse_attachments_with_future(fd.source_key_attachments, source_key_futures, values)
-    recurse_attachments_with_future(fd.source_list_attachments, source_list_futures, values)
-        
+    # create the list attributes for target_key attachments.
+    populate_target_key_lists_for_values(values, fd.target_key_attachments)
+    
+    recurse_attachments_with_future(fd.source_key_attachments, source_key_futures, values, transform=transform)
+    recurse_attachments_with_future(fd.source_list_attachments, source_list_futures, values, transform=transform)
+    
+    # append target_key objects to the lists that were pre-created earlier
     for a in fd.target_key_attachments:
         future = target_key_futures.pop(0)
-        target_values = fetch(a.target_fd,future=future)
+        target_values = fetch(a.target_fd,future=future, transform=transform)
         for value in target_values:
             source_key = getattr(value, a.key_name)
             source = values_dict[source_key]

@@ -100,7 +100,7 @@ name would default to 'targets' and key_name would default to 'source_key'
 ## fetch
 The final stage is to call the fetch method. 
 ```python
-def fetch(fetch_definition, future=None, keys=None, key_filter=None, additional_filter=None, order=None):
+def fetch(fetch_definition, future=None, keys=None, key_filter=None, additional_filter=None, order=None, transform=transform_model):
 ```
 * fetch_definition: the top level fetch object
 * future: Not generally used externally. The result of an async ndb method. 
@@ -108,6 +108,7 @@ def fetch(fetch_definition, future=None, keys=None, key_filter=None, additional_
 * key_filter: An ndb filter that will select the top level object(s).
 * additional_filter: Not generally used externally. Additional filter to be applied to the query.
 * order: The attribute to order the results by. Only used with query style (key_filter) methods. 
+* transform: A function that takes an object as parameter, and returns an object. This could be used to set custom attributes, or to do a deep copy if required.
 
 keys, key_filter and future are mutually exclusive.
 
