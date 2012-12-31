@@ -23,21 +23,8 @@ import graphfetch
 import random
 import logging
 import testmodels
-
-# Data Model
-class Customer(ndb.Model):
-    name=ndb.StringProperty()
-    
-class Product(ndb.Model):
-    name=ndb.StringProperty()
-
-class OrderDetail(ndb.Model):
-    product_key=ndb.KeyProperty(kind=Product)
-    quantity=ndb.IntegerProperty()
-    
-class Order(ndb.Model):
-    customer_key=ndb.KeyProperty(kind=Customer)
-    orderdetail_keys=ndb.KeyProperty(kind=OrderDetail, repeated=True)
+from orders import Customer, Product, OrderDetail, Order
+import orders
     
 # utility Methods
 def get_order(order_key):
@@ -45,13 +32,8 @@ def get_order(order_key):
     fetch.attach(kind=OrderDetail, attachment_type=graphfetch.SOURCE_LIST)
 
 def get_customer_with_orders_and_details(customer_key):
-    customer_fetch = graphfetch.FetchDefinition(Customer)
-    order_fetch = customer_fetch.attach(Order, graphfetch.TARGET_KEY)
-    detail_fetch = order_fetch.attach(OrderDetail, graphfetch.SOURCE_LIST)
-    product_fetch = detail_fetch.attach(Product, graphfetch.SOURCE_KEY)
-    
+    customer_fetch=orders.get_full_order_fetchdef()
     keys=[customer_key]
-
     customer = graphfetch.fetch(customer_fetch, keys=keys)[0]
     return customer
 #Handlers
@@ -89,27 +71,7 @@ class A1QueryRequestHandler(webapp2.RequestHandler):
         self.response.write("<a href='/'>Return to Start</a>")
 class CreateRequestHandler(webapp2.RequestHandler):
     def get(self):
-        # create test data
-        products=[]
-        for product_num in range(100):
-            name="Product %d" % (product_num)
-            product = Product(name=name)
-            products.append(product)
-        product_keys = ndb.put_multi(products)
-        for cust_num in range(10):
-            cust = Customer(name="Customer %d" % cust_num)
-            cust.put()
-            orders=[]
-            for order_number in range(5):
-                details = []
-                for detail_num in range(3):
-                    detail = OrderDetail(quantity=random.randint(1,10),
-                                         product_key=random.choice(product_keys))
-                    details.append(detail)
-                orderdetail_keys=ndb.put_multi(details)
-                order = Order(customer_key=cust.key, orderdetail_keys=orderdetail_keys)
-                orders.append(order)
-            ndb.put_multi(orders)
+        orders.create_order_test_data()
         testmodels.populate_test_data()
         self.redirect('/')
 
