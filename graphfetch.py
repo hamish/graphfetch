@@ -90,7 +90,7 @@ def get_values_from_future(future):
     if isinstance(future, types.ListType):
         for f in future:
             values.append(f.get_result())
-    elif filter is not None:
+    elif future is not None:
         values=future.get_result()
     return values
 
@@ -117,15 +117,18 @@ def get_futures_from_keys(fd, keys):
 
 def get_target_key_futures(fd, keys):
     target_key_futures=[]
-    for a in fd.target_key_attachments:
-        if isinstance(keys, types.ListType):
-            logging.info("get_target_key_futures: %s" % keys)
-            key_filter = ndb.GenericProperty(a.key_name).IN(keys)
-        else: 
-            logging.info("Keys = %s" % str(keys))
-            key_filter = ndb.GenericProperty(a.key_name) == keys
-        future = get_futures_from_qry(a.target_fd,key_filter=key_filter, additional_filter=a.additional_filter, order=a.order)
-        target_key_futures.append(future)
+    if len(keys):
+        for a in fd.target_key_attachments:
+            if isinstance(keys, types.ListType):
+                logging.info("get_target_key_futures: %s" % keys)
+                key_filter = ndb.GenericProperty(a.key_name).IN(keys)
+            else: 
+                logging.info("Keys = %s" % str(keys))
+                key_filter = ndb.GenericProperty(a.key_name) == keys
+            future = get_futures_from_qry(a.target_fd,key_filter=key_filter, additional_filter=a.additional_filter, order=a.order)
+            target_key_futures.append(future)
+    else: 
+        target_key_futures.append(None)
     return target_key_futures
 
 def get_value_future(fd, future, keys, key_filter, additional_filter):
@@ -210,16 +213,17 @@ def attach_target_key_values(fd, target_key_futures, values_dict, transform):
     # append target_key objects to the lists that were pre-created earlier
     for a in fd.target_key_attachments:
         future = target_key_futures.pop(0)
-        target_values = fetch(a.target_fd,future=future, transform=transform)
-        for value in target_values:
-            source_key = getattr(value, a.key_name)
-            source = values_dict[source_key]
-            target_attr=[]
-            if hasattr(source, a.name):
-                target_attr = getattr(source, a.name)
-            else:
-                setattr(source, a.name, target_attr)
-            target_attr.append(value)        
+        if future:
+            target_values = fetch(a.target_fd,future=future, transform=transform)
+            for value in target_values:
+                source_key = getattr(value, a.key_name)
+                source = values_dict[source_key]
+                target_attr=[]
+                if hasattr(source, a.name):
+                    target_attr = getattr(source, a.name)
+                else:
+                    setattr(source, a.name, target_attr)
+                target_attr.append(value)        
 
                 
 def fetch(fd, future=None, keys=None, key_filter=None, additional_filter=None, order=None, transform=transform_model):

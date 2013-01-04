@@ -59,6 +59,14 @@ class BasicFetchTests(GraphFetchTests):
         self.assertEqual(foo.name, 'joe', "name incorrect")
         self.assertEqual(foo.id, foo.key.id(), "foo.id should be set to the value of foo.key.id(). Is transform_model working?")
 
+    def testQueryNoResults(self):
+        fd = FetchDefinition(Foo)
+        results = fetch(fd, key_filter=Foo.name=='NOTHING MATCHES THIS')
+        self.assertTrue(len(results)==0, "non empty results returned")
+
+        results2, curs, more = fetch_page(fd, 10, key_filter=Foo.name=='NOTHING MATCHES THIS')
+        self.assertTrue(len(results2)==0, "non empty results returned")
+
     def testBasicKeyList(self):
         fd = FetchDefinition(Foo)
         foo = fetch(fd, key_filter=Foo.name=='joe')[0]
@@ -79,7 +87,7 @@ class FullGraphFetchTests(GraphFetchTests):
             val = getattr(o,name)
             val_len = len(val)
             self.assertTrue(val_len == length, "attribute %s length is %d  not %d" %(name, val_len, length))
-        
+
     def testFullGraph(self):
         fd=testmodels.get_a1_fullfetchdef()
         filter=testmodels.A1.name=='Full Graph'
@@ -135,14 +143,29 @@ class OrderGraphFetchTests(GraphFetchTests):
         
     def testPagination(self):
         fd=orders.get_full_order_fetchdef()
-        filter=orders.Customer.account_id>=-1
-        results, next_curs, more=fetch_page(fd, 6, key_filter=filter, order=orders.Customer.account_id)
-        self.assertEqual(len(results), 6)
-        customer=results[0]
+        filter=orders.Customer.account_id>=-1 # This selects all records - in future allow None filter to do this.
+        
+        # Page 1
+        results1, curs1, more1=fetch_page(fd, 6, key_filter=filter, order=orders.Customer.account_id)
+        self.assertEqual(len(results1), 6)
+        customer=results1[0]
+        curs1_str=curs1.urlsafe()
         self.assertTrue(isinstance(customer.orders, types.ListType), "Customer.orders should be a list")
-        curs_str=next_curs.urlsafe()
-        curs_2 = ndb.Cursor(urlsafe=curs_str)
-        results2, next_curs2, more2=fetch_page(fd, 6, key_filter=filter, start_cursor=curs_2, order=orders.Customer.account_id)
+        
+        # Page 2
+        new_curs1 = ndb.Cursor(urlsafe=curs1_str)
+        results2, curs2, more2=fetch_page(fd, 6, key_filter=filter, start_cursor=new_curs1, order=orders.Customer.account_id)
         self.assertEqual(len(results2), 4)
+        self.assertFalse(more2)
+        
+        # Page 3 should be the same as page 1, except with the results in the opposite order.
+        prev_cursor=new_curs1.reversed()
+        results3, curs3, more3=fetch_page(fd, 6, key_filter=filter, start_cursor=prev_cursor, order=-orders.Customer.account_id)
+        results3.reverse()
+
+        self.assertEqual(results3[0].key.id(), results1[0].key.id())
+
+        # Page 4 is the page after Page 2 (should have no results)
+        results4, curs4, more4=fetch_page(fd, 6, key_filter=filter, start_cursor=curs2, order=orders.Customer.account_id)
         
 
