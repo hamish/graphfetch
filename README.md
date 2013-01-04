@@ -1,6 +1,6 @@
 # Graphfetch
 
-Allows appengine python programmers to retrieve a set of related ndb datastore objects, connected together into a graph for easy to use manner.
+Allows appengine python programmers to retrieve a set of related ndb datastore objects, connected together into a graph.
 
 This has the following benefits:
 * Less lines of code to retrieve related objects.
