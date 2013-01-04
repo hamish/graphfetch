@@ -46,20 +46,35 @@ class BasicFetchTests(GraphFetchTests):
         #testmodels.populate_test_data()
         
     def create_entities(self):
-        self.joe = Foo(name='joe', tags=['joe', 'jill', 'hello'], rate=1)
+        self.joe = Foo(id=101, name='joe', tags=['joe', 'jill', 'hello'], rate=1)
         self.joe.put()
-        self.jill = Foo(name='jill', tags=['jack', 'jill'], rate=2)
+        self.jill = Foo(id=102, name='jill', tags=['jack', 'jill'], rate=2)
         self.jill.put()
-        self.moe = Foo(name='moe', rate=1)
+        self.moe = Foo(id=103, name='moe', rate=1)
         self.moe.put()
+
+    def assertJoe(self, obj):
+        self.assertEqual(obj.name, 'joe', "name incorrect")
+        self.assertEqual(obj.id, obj.key.id(), "foo.id should be set to the value of foo.key.id(). Is transform_model working?")
+        
+    def testKeysQuery(self):
+        fd = FetchDefinition(Foo)
+        key = ndb.Key(Foo, 101)
+        foo = fetch(fd, keys=[key])[0]
+        self.assertJoe(foo)
+
+    def testKeyQuery(self):
+        fd = FetchDefinition(Foo)
+        key = ndb.Key(Foo, 101)
+        foo = fetch(fd, key=key)
+        self.assertJoe(foo)
 
     def testBasicQuery(self):
         fd = FetchDefinition(Foo)
         foo = fetch(fd, filter=Foo.name=='joe')[0]
-        self.assertEqual(foo.name, 'joe', "name incorrect")
-        self.assertEqual(foo.id, foo.key.id(), "foo.id should be set to the value of foo.key.id(). Is transform_model working?")
+        self.assertJoe(foo)
 
-    def testBasicAll(self):
+    def testQueryAll(self):
         fd = FetchDefinition(Foo)
         results = fetch(fd)
         self.assertEqual(len(results), 3, "Querying with no keys, future or filter should return all entities")

@@ -133,11 +133,14 @@ def get_target_key_futures(fd, keys):
         target_key_futures.append(None)
     return target_key_futures
 
-def get_value_future(fd, future, keys, filter, additional_filter):
+def get_value_future(fd, future, key, keys, filter, additional_filter):
     value_future = None
     if future is not None:
         logging.info("gvf: future")
         value_future = future
+    elif key is not None:
+        logging.info("gvf: key")
+        value_future=get_futures_from_keys(fd, key)
     elif keys is not None:
         logging.info("gvf: keys")
         value_future=get_futures_from_keys(fd, keys)
@@ -226,9 +229,9 @@ def attach_target_key_values(fd, target_key_futures, values_dict, transform):
                 target_attr.append(value)        
 
                 
-def fetch(fd, future=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model):
+def fetch(fd, future=None, key=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model):
     # If the datastore retrieve for this iteration is not already running, get it started now.
-    value_future = get_value_future(fd, future, keys, filter, additional_filter)
+    value_future = get_value_future(fd, future, key, keys, filter, additional_filter)
 
     target_key_futures=[]
     source_list_futures=[]
