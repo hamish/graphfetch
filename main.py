@@ -19,6 +19,8 @@ import os
 import webapp2
 from webapp2_extras.routes import RedirectRoute
 from google.appengine.ext import ndb
+from google.appengine.api import memcache
+
 import graphfetch
 import random
 import logging
@@ -33,9 +35,9 @@ def get_order(order_key):
 
 def get_customer_with_orders_and_details(customer_key):
     customer_fetch=orders.get_full_order_fetchdef()
-    keys=[customer_key]
-    customer = graphfetch.fetch(customer_fetch, keys=keys)[0]
+    customer = graphfetch.fetch(customer_fetch, key=customer_key)
     return customer
+
 #Handlers
 class QueryRequestHandler(webapp2.RequestHandler):
     def get(self, customer_id):
@@ -77,6 +79,7 @@ class CreateRequestHandler(webapp2.RequestHandler):
 
 class HomeRequestHandler(webapp2.RequestHandler):
     def get(self):
+        self.response.write("<a href='/flush/'>Flush</a><br>")
         self.response.write("<a href='/assertions/'>Assertions</a><br>")
         self.response.write("<a href='/create/'>Create Test Data</a><hr>")
         customers = Customer.query().fetch()
@@ -105,9 +108,15 @@ class AssertionsRequestHandler(webapp2.RequestHandler):
         
         
         self.response.write("<a href='/'>Return to Start</a>")
+
+class FlushMemcacheHandler(webapp2.RequestHandler):
+    def get(self):
+        memcache.flush_all()
+        self.redirect('/')
         
 app = webapp2.WSGIApplication([
            RedirectRoute('/', HomeRequestHandler, name='home', strict_slash=True),
+           RedirectRoute('/flush/', FlushMemcacheHandler, name='flush', strict_slash=True),
            RedirectRoute('/create/', CreateRequestHandler, name='create', strict_slash=True),
            RedirectRoute('/assertions/', AssertionsRequestHandler, name='create', strict_slash=True),
            RedirectRoute('/query/<customer_id>', QueryRequestHandler, name='query', strict_slash=True),
