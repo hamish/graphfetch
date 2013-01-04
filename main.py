@@ -20,6 +20,9 @@ import webapp2
 from webapp2_extras.routes import RedirectRoute
 from google.appengine.ext import ndb
 from google.appengine.api import memcache
+import jinja2
+import os
+
 
 import graphfetch
 import random
@@ -79,16 +82,12 @@ class CreateRequestHandler(webapp2.RequestHandler):
 
 class HomeRequestHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.write("<a href='/_ah/stats/'>Stats</a><br>")
-        self.response.write("<a href='/flush/'>Flush</a><br>")
-        self.response.write("<a href='/assertions/'>Assertions</a><br>")
-        self.response.write("<a href='/create/'>Create Test Data</a><hr>")
-        customers = Customer.query().fetch()
-        for customer in customers:
-            self.response.write("<a href='/query/%d'>Query Data for customer %s</a><br>" % (customer.key.id(), customer.name))
-        a1s = testmodels.A1.query().fetch()
-        for a1 in a1s:
-            self.response.write("<a href='/querya1/%d'>Query A1: %s<br>" % (a1.key.id(), a1.name))
+        template_values={
+                         'customers' : Customer.query().fetch(),
+                         'a1s' : testmodels.A1.query().fetch(),
+                         }
+        template = jinja_environment.get_template('index.html')
+        self.response.out.write(template.render(template_values))
 
 class AssertionsRequestHandler(webapp2.RequestHandler):
     def asert_same(self, actual, expected, label):
@@ -114,6 +113,9 @@ class FlushMemcacheHandler(webapp2.RequestHandler):
     def get(self):
         memcache.flush_all()
         self.redirect('/')
+
+jinja_environment = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
         
 app = webapp2.WSGIApplication([
            RedirectRoute('/', HomeRequestHandler, name='home', strict_slash=True),

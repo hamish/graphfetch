@@ -1,0 +1,20 @@
+<html>
+<body>
+<a href='/_ah/stats/'>Stats</a><br>
+<a href='/flush/'>Flush Memcache</a><br>
+<a href='/create/'>Create Test Data</a>
+<hr>
+
+{% for customer in customers %}
+<a href='/query/{{customer.key.id()}}'>Query Data for customer {{customer.name}}</a><br>
+{% endfor %}
+
+{% for a1 in a1s %}
+<a href='/querya1/{{a1.key.id()}}'>Query A1: {{a1.name}}<br>
+{% endfor %}
+
+	
+</body>	
+</html>
+
+	
