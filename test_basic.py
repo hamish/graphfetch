@@ -55,21 +55,26 @@ class BasicFetchTests(GraphFetchTests):
 
     def testBasicQuery(self):
         fd = FetchDefinition(Foo)
-        foo = fetch(fd, key_filter=Foo.name=='joe')[0]
+        foo = fetch(fd, filter=Foo.name=='joe')[0]
         self.assertEqual(foo.name, 'joe', "name incorrect")
         self.assertEqual(foo.id, foo.key.id(), "foo.id should be set to the value of foo.key.id(). Is transform_model working?")
 
+    def testBasicAll(self):
+        fd = FetchDefinition(Foo)
+        results = fetch(fd)
+        self.assertEqual(len(results), 3, "Querying with no keys, future or filter should return all entities")
+
     def testQueryNoResults(self):
         fd = FetchDefinition(Foo)
-        results = fetch(fd, key_filter=Foo.name=='NOTHING MATCHES THIS')
+        results = fetch(fd, filter=Foo.name=='NOTHING MATCHES THIS')
         self.assertTrue(len(results)==0, "non empty results returned")
 
-        results2, curs, more = fetch_page(fd, 10, key_filter=Foo.name=='NOTHING MATCHES THIS')
+        results2, curs, more = fetch_page(fd, 10, filter=Foo.name=='NOTHING MATCHES THIS')
         self.assertTrue(len(results2)==0, "non empty results returned")
 
     def testBasicKeyList(self):
         fd = FetchDefinition(Foo)
-        foo = fetch(fd, key_filter=Foo.name=='joe')[0]
+        foo = fetch(fd, filter=Foo.name=='joe')[0]
         self.assertEqual(foo.name, 'joe', "name incorrect")
 
 class FullGraphFetchTests(GraphFetchTests):
@@ -91,7 +96,7 @@ class FullGraphFetchTests(GraphFetchTests):
     def testFullGraph(self):
         fd=testmodels.get_a1_fullfetchdef()
         filter=testmodels.A1.name=='Full Graph'
-        results=fetch(fd, key_filter=filter)
+        results=fetch(fd, filter=filter)
         self.assertTrue(isinstance(results, types.ListType), "results should be a list")
         self.assertEqual(len(results), 1, "too many results")
         a1=results[0]
@@ -114,7 +119,7 @@ class FullGraphFetchTests(GraphFetchTests):
             return o
         fd=testmodels.get_a1_fullfetchdef()
         filter=testmodels.A1.name=='Full Graph'
-        results=fetch(fd, key_filter=filter, transform=custom_transform)
+        results=fetch(fd, filter=filter, transform=custom_transform)
         
         a1=results[0]
         self.assertTrue(a1.testattr, "testattr should be set to true by custom_transform")
@@ -137,7 +142,7 @@ class OrderGraphFetchTests(GraphFetchTests):
     def testSetup(self):
         fd=orders.get_full_order_fetchdef()
         filter=orders.Customer.account_id>=-1
-        values = fetch(fd, key_filter=filter)
+        values = fetch(fd, filter=filter)
         customer=values[0]
         self.assertTrue(isinstance(customer.orders, types.ListType), "Customer.orders should be a list")
         
@@ -146,7 +151,7 @@ class OrderGraphFetchTests(GraphFetchTests):
         filter=orders.Customer.account_id>=-1 # This selects all records - in future allow None filter to do this.
         
         # Page 1
-        results1, curs1, more1=fetch_page(fd, 6, key_filter=filter, order=orders.Customer.account_id)
+        results1, curs1, more1=fetch_page(fd, 6, filter=filter, order=orders.Customer.account_id)
         self.assertEqual(len(results1), 6)
         customer=results1[0]
         curs1_str=curs1.urlsafe()
@@ -154,18 +159,18 @@ class OrderGraphFetchTests(GraphFetchTests):
         
         # Page 2
         new_curs1 = ndb.Cursor(urlsafe=curs1_str)
-        results2, curs2, more2=fetch_page(fd, 6, key_filter=filter, start_cursor=new_curs1, order=orders.Customer.account_id)
+        results2, curs2, more2=fetch_page(fd, 6, filter=filter, start_cursor=new_curs1, order=orders.Customer.account_id)
         self.assertEqual(len(results2), 4)
         self.assertFalse(more2)
         
         # Page 3 should be the same as page 1, except with the results in the opposite order.
         prev_cursor=new_curs1.reversed()
-        results3, curs3, more3=fetch_page(fd, 6, key_filter=filter, start_cursor=prev_cursor, order=-orders.Customer.account_id)
+        results3, curs3, more3=fetch_page(fd, 6, filter=filter, start_cursor=prev_cursor, order=-orders.Customer.account_id)
         results3.reverse()
 
         self.assertEqual(results3[0].key.id(), results1[0].key.id())
 
         # Page 4 is the page after Page 2 (should have no results)
-        results4, curs4, more4=fetch_page(fd, 6, key_filter=filter, start_cursor=curs2, order=orders.Customer.account_id)
+        results4, curs4, more4=fetch_page(fd, 6, filter=filter, start_cursor=curs2, order=orders.Customer.account_id)
         
 

@@ -1,22 +1,36 @@
 # Graphfetch
 
-Allows appengine python programmers to retrieve a set of related ndb datastore objects, connected together into a graph for easy 
+Allows appengine python programmers to retrieve a set of related ndb datastore objects, connected together into a graph for easy to use manner.
+
+This has the following benefits:
+* Less lines of code to retrieve related objects.
+* Allows simpler, easier to understand templating.
+* Improved performance by reducing the problematic staircase pattern.
 
 ## Background
 When I first started using ndb, I found myself doing things like invoice.customer.get().name in my template code. This seemed to be a bad idea(tm).
 
-I started creating custom code to manually stitch results together, this worked a lot better - particularly in the templates, but I ended up with a lot more code to maintain than I wanted. This is also when I developed the pattern of using identifier_key for KeyProperties and identifier_keys for repeated Key Properties so that identifier and identifiers were available on the object to attache the target objects and lists.
+I started creating custom code to manually stitch results together, this worked a lot better - particularly in the templates, but I ended up with a lot more code to maintain than I wanted. 
 
 In an effort to reduce the amount of code I have to support, I have consolidated the code that retrieves datastore objects into the graphfetch library. It allows the user to specify what child (or target) objects should also be available when a top level object is retrieved.
-
 
 ## Overview
 To use graphfetch, 
 
 1. Construct the FetchDefinition graph which defines what objects should be retreived.
-2. call fetch with the fetch definition and either the keys of the objects to retrieve, or the filter to use with a query.
+2. call fetch with the FetchDefinition and either the keys of the objects to retrieve, or the filter to use with a query.
 
 The current implementation uses the ndb async methods to attempt to do as much work in parallel as possible, reducing the elapsed time to fetch the objects. 
+
+Simple example:
+```python
+invoice_fd = FetchDefinition(kind=Invoice)
+invoice_fd.attach(kind=Customer, attachment_type=SOURCE_KEY)
+invoice = fetch(invoice_fetch, key=invoice_key)
+print "Invoice: %s" % invoice.invoice_number
+print "Customer: %s" % invoice.customer.name
+```
+
 
 ## Attachment Types
 Graphfetch allows the source model to be linked to the target model in 3 possible ways:
@@ -82,6 +96,9 @@ The parameter meanings are:
 #### Default Values
 * name: Defaults to target_kind.lower() or target_kind.lower() + 's' if the attachment results in a list.
 * key_name: Defaults to target_kind.lower + '_key' for SOURCE_KEY, source_kind.lower() ='_key' for  TARGET_KEY and target_kind.lower() = '_keys' for SOURCE_KEY Attachments. 
+
+I use the _key and _keys pattern so that the name (without _key(s)) is available on the object as a location to attache the related objects.
+
 eg:
 ```python
 fd = FetchDefinition(Source)
@@ -161,7 +178,7 @@ def get_invoice(invoice_id):
 	line_fetch = invoice_fetch.attach(kind=Line, attachment_type=SOURCE_LIST)
 	line_fetch.attach(kind=Item, attachment_type=SOURCE_KEY)
 	key=ndb.Key(Invoice, invoice_id)
-	return fetch(invoice_fetch, keys)
+	return fetch(invoice_fetch, key=key)
 ```
 
 

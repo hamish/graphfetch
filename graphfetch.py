@@ -94,15 +94,17 @@ def get_values_from_future(future):
         values=future.get_result()
     return values
 
-def get_qry_from_filter(fd, key_filter, additional_filter=None, order=None):
-    qry = fd.kind.query(key_filter)
+def get_qry_from_filter(fd, filter, additional_filter=None, order=None):
+    qry = fd.kind.query()
+    if filter:
+        qry=qry.filter(filter)
     if additional_filter is not None:
         qry=qry.filter(additional_filter)
     if order is not None:
         qry=qry.order(order)
     return qry
-def get_futures_from_qry(fd, key_filter, additional_filter=None, order=None):
-    qry=get_qry_from_filter(fd, key_filter, additional_filter, order)
+def get_futures_from_qry(fd, filter, additional_filter=None, order=None):
+    qry=get_qry_from_filter(fd, filter, additional_filter, order)
     logging.info("get_futures_from_qry: %s" % str(qry))
     values=qry.fetch_async()
     return values
@@ -121,17 +123,17 @@ def get_target_key_futures(fd, keys):
         for a in fd.target_key_attachments:
             if isinstance(keys, types.ListType):
                 logging.info("get_target_key_futures: %s" % keys)
-                key_filter = ndb.GenericProperty(a.key_name).IN(keys)
+                filter = ndb.GenericProperty(a.key_name).IN(keys)
             else: 
                 logging.info("Keys = %s" % str(keys))
-                key_filter = ndb.GenericProperty(a.key_name) == keys
-            future = get_futures_from_qry(a.target_fd,key_filter=key_filter, additional_filter=a.additional_filter, order=a.order)
+                filter = ndb.GenericProperty(a.key_name) == keys
+            future = get_futures_from_qry(a.target_fd,filter=filter, additional_filter=a.additional_filter, order=a.order)
             target_key_futures.append(future)
     else: 
         target_key_futures.append(None)
     return target_key_futures
 
-def get_value_future(fd, future, keys, key_filter, additional_filter):
+def get_value_future(fd, future, keys, filter, additional_filter):
     value_future = None
     if future is not None:
         logging.info("gvf: future")
@@ -139,11 +141,9 @@ def get_value_future(fd, future, keys, key_filter, additional_filter):
     elif keys is not None:
         logging.info("gvf: keys")
         value_future=get_futures_from_keys(fd, keys)
-    elif key_filter is not None:
-        logging.info("gvf: key_filter")
-        value_future= get_futures_from_qry(fd, key_filter, additional_filter)
     else:
-        raise Exception("fd: you must pass one of future, keys or key_filter")
+        logging.info("gvf: filter")
+        value_future= get_futures_from_qry(fd, filter, additional_filter)
     return value_future
 
 def get_key_dict(values):
@@ -226,9 +226,9 @@ def attach_target_key_values(fd, target_key_futures, values_dict, transform):
                 target_attr.append(value)        
 
                 
-def fetch(fd, future=None, keys=None, key_filter=None, additional_filter=None, order=None, transform=transform_model):
+def fetch(fd, future=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model):
     # If the datastore retrieve for this iteration is not already running, get it started now.
-    value_future = get_value_future(fd, future, keys, key_filter, additional_filter)
+    value_future = get_value_future(fd, future, keys, filter, additional_filter)
 
     target_key_futures=[]
     source_list_futures=[]
@@ -265,9 +265,9 @@ def fetch(fd, future=None, keys=None, key_filter=None, additional_filter=None, o
         
     return values
 
-def fetch_page(fd, page_size, start_cursor=None, key_filter=None, additional_filter=None, order=None, transform=transform_model,):
+def fetch_page(fd, page_size, start_cursor=None, filter=None, additional_filter=None, order=None, transform=transform_model,):
     
-    qry=get_qry_from_filter(fd, key_filter, additional_filter, order)
+    qry=get_qry_from_filter(fd, filter, additional_filter, order)
     values, next_curs, more = qry.fetch_page(page_size, start_cursor=start_cursor)
     k = get_keys(values)
     values_dict=get_key_dict(values)
