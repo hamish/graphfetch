@@ -117,17 +117,18 @@ name would default to 'targets' and key_name would default to 'source_key'
 ## fetch
 The final stage is to call the fetch method. 
 ```python
-def fetch(fetch_definition, future=None, keys=None, key_filter=None, additional_filter=None, order=None, transform=transform_model):
+def fetch(fetch_definition, future=None, key=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model):
 ```
 * fetch_definition: the top level fetch object
 * future: Not generally used externally. The result of an async ndb method. 
-* keys: A Key or list of Keys that represent the top level object(s).
-* key_filter: An ndb filter that will select the top level object(s).
+* key: A Key that represents the top level object.
+* keys: A list of Keys that represent the top level object(s).
+* filter: An ndb filter that will select the top level object(s).
 * additional_filter: Not generally used externally. Additional filter to be applied to the query.
 * order: The attribute to order the results by. Only used with query style (key_filter) methods. 
 * transform: A function that takes an object as parameter, and returns an object. This could be used to set custom attributes, or to do a deep copy if required.
 
-keys, key_filter and future are mutually exclusive.
+key, keys, filter and future are mutually exclusive. 
 
 ## An Example:
 Imagine the following Models
@@ -199,12 +200,6 @@ There is a CI running against the main version of graphfetch:
 https://travis-ci.org/hamish/graphfetch
 ## Issues
 Please report any issues that you find in github.
-
-## Future work
-
-* Comprehensive testing
-* Performance improvements
-* Pagination for top level fetches
 
 
 
