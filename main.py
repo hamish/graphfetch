@@ -79,6 +79,7 @@ class CreateRequestHandler(webapp2.RequestHandler):
 
 class HomeRequestHandler(webapp2.RequestHandler):
     def get(self):
+        self.response.write("<a href='http://localhost:8080/_ah/stats/'>Stats</a>")
         self.response.write("<a href='/flush/'>Flush</a><br>")
         self.response.write("<a href='/assertions/'>Assertions</a><br>")
         self.response.write("<a href='/create/'>Create Test Data</a><hr>")
