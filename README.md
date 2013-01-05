@@ -184,10 +184,9 @@ def get_invoice(invoice_id):
 
 
 ## Performance 
+Graphfetch currently provides 2 implementations - one that uses the syncronus api to provide a baseline. And then an optimized implementaiton (which is the default) that uses the ndb async methods to execute as much of the datastore activity in parallel as possible. Performance appears to be good. Future enhancements will profile different implementaitons (for example a tasklet based implementation.)
 
-Graphfetch uses the ndb async methods to execute as much of the datastore activity in parallel as possible. Performance appears to be very good. A future enhancement #1 aims to provide a tasklet based implementation which may be faster in some complex situations.
-
-Some indication of performance can be obtained by the following app stats reports. Both of these snapshots were taken after the objects had been pre-loaded into memcache (by fetching the same graph directly prior to the sample being taken):
+Some indication of performance can be obtained by the following app stats reports. The objects being retrieved were fetched several times in a row before the appstats snapshot was taken, so this shows the situation where all of the cachable objects were alread in memcache.
 
 Async Implementation
 
@@ -197,8 +196,19 @@ Basic Implementation
 
 ![Basic Performance chart](https://github.com/hamish/graphfetch/raw/master/doc/basic_perf.png "Basic Performance")
 
+We also measured both implementation directly after flushing memcache, the results were:
 
-There will be times when knowledge of the datamodel allows the user to design a system that performs better than graphfetch.
+Async Implementation
+
+RPC Total: 2034 ms
+Grand Total: 858 ms
+
+Basic Implementation
+
+RPC Total: 1544 ms
+Grand Total: 1737 ms
+
+You can note that the wallclock time (Grand Total) is significantly lower when using the async api, however the RPC Total  is actually higher. This would equate to a better user experience, but at a higher resource cost. Graphfetch prioritizes execution time over resource cost, as this tends to allign with the best user experience.
 
 ## Testing
 Execute the unit tests by navigating into the graphfetch directory and then executing the following:
