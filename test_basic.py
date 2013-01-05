@@ -107,11 +107,7 @@ class FullGraphFetchTests(GraphFetchTests):
             val = getattr(o,name)
             val_len = len(val)
             self.assertTrue(val_len == length, "attribute %s length is %d  not %d" %(name, val_len, length))
-
-    def testFullGraph(self):
-        fd=testmodels.get_a1_fullfetchdef()
-        filter=testmodels.A1.name=='Full Graph'
-        results=fetch(fd, filter=filter)
+    def assertFullGraphResults(self, results):
         self.assertTrue(isinstance(results, types.ListType), "results should be a list")
         self.assertEqual(len(results), 1, "too many results")
         a1=results[0]
@@ -127,6 +123,19 @@ class FullGraphFetchTests(GraphFetchTests):
         d_names = ["d%ds"%i for i in range(1,6)]
         self.assertAllAreType(a1, d_names, types.ListType)
         self.assertAllAreLength(a1, d_names, 5)
+        
+    def testFullGraph(self):
+        fd=testmodels.get_a1_fullfetchdef()
+        filter=testmodels.A1.name=='Full Graph'
+        results=fetch(fd, filter=filter)
+        self.assertFullGraphResults(results)
+    
+    def testFullGraphBasicImpl(self):
+        from graphfetch import basic_graphfetch
+        fd=testmodels.get_a1_fullfetchdef()
+        filter=testmodels.A1.name=='Full Graph'
+        results=fetch(fd, filter=filter, impl=basic_graphfetch.fetch_basic)
+        self.assertFullGraphResults(results)
 
     def testCustomTransformMoodel(self):
         def custom_transform(o):

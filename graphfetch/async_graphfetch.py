@@ -17,24 +17,24 @@ __author__  = 'Hamish Currie'
 import logging
 import types
 from google.appengine.ext import ndb
+from .__init__ import transform_model, transform_model_list, transform_futures_list
 
-
-def transform_model(instance):
-    if not isinstance(instance, ndb.Model):
-        raise Exception("Attempting to transform object which is not an ndb Model: %s" % str(instance))
-    setattr(instance, 'id', instance.key.id())
-    for key in dir(instance):
-        value = getattr(instance, key)
-    return instance
-
-def transform_model_list(entities, transform=transform_model):
-    if isinstance(entities, types.ListType):
-        return [transform(e) for e in entities]
-    else:
-        return transform(entities)
-
-def transform_futures_list(futures):
-    return [transform_model(f.get_result()) for f in futures]
+#def transform_model(instance):
+#    if not isinstance(instance, ndb.Model):
+#        raise Exception("Attempting to transform object which is not an ndb Model: %s" % str(instance))
+#    setattr(instance, 'id', instance.key.id())
+#    for key in dir(instance):
+#        value = getattr(instance, key)
+#    return instance
+#
+#def transform_model_list(entities, transform=transform_model):
+#    if isinstance(entities, types.ListType):
+#        return [transform(e) for e in entities]
+#    else:
+#        return transform(entities)
+#
+#def transform_futures_list(futures):
+#    return [transform_model(f.get_result()) for f in futures]
 
 SOURCE_LIST='SOURCE_LIST'
 TARGET_KEY='TARGET_KEY'
@@ -186,7 +186,7 @@ def recurse_attachment_with_future(attachment, futures, value, transform=transfo
         else:
             setattr(value,attachment.name, None)
             return
-    target_values=fetch(attachment.target_fd, future=future,transform=transform)
+    target_values=fetch_async(attachment.target_fd, future=future,transform=transform)
     logging.info("setting %s" % attachment.name)
     setattr(value, attachment.name, target_values)
 
@@ -217,7 +217,7 @@ def attach_target_key_values(fd, target_key_futures, values_dict, transform):
     for a in fd.target_key_attachments:
         future = target_key_futures.pop(0)
         if future:
-            target_values = fetch(a.target_fd,future=future, transform=transform)
+            target_values = fetch_async(a.target_fd,future=future, transform=transform)
             for value in target_values:
                 source_key = getattr(value, a.key_name)
                 source = values_dict[source_key]
@@ -229,7 +229,7 @@ def attach_target_key_values(fd, target_key_futures, values_dict, transform):
                 target_attr.append(value)        
 
                 
-def fetch(fd, future=None, key=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model):
+def fetch_async(fd, future=None, key=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model):
     # If the datastore retrieve for this iteration is not already running, get it started now.
     value_future = get_value_future(fd, future, key, keys, filter, additional_filter)
 
@@ -268,7 +268,7 @@ def fetch(fd, future=None, key=None, keys=None, filter=None, additional_filter=N
         
     return values
 
-def fetch_page(fd, page_size, start_cursor=None, filter=None, additional_filter=None, order=None, transform=transform_model,):
+def fetch_page_async(fd, page_size, start_cursor=None, filter=None, additional_filter=None, order=None, transform=transform_model,):
     
     qry=get_qry_from_filter(fd, filter, additional_filter, order)
     values, next_curs, more = qry.fetch_page(page_size, start_cursor=start_cursor)
