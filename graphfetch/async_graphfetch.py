@@ -117,20 +117,18 @@ def get_futures_from_keys(fd, keys):
         futures = keys.get_async()
     return futures
 
+def get_target_key_future(fd, key, target_key_futures):
+    for a in fd.target_key_attachments:
+        filter = ndb.GenericProperty(a.key_name) == key
+        future = get_futures_from_qry(a.target_fd,filter=filter, additional_filter=a.additional_filter, order=a.order)
+        target_key_futures.append(future)
 def get_target_key_futures(fd, keys):
     target_key_futures=[]
-    if len(keys):
-        for a in fd.target_key_attachments:
-            if isinstance(keys, types.ListType):
-                logging.info("get_target_key_futures: %s" % keys)
-                filter = ndb.GenericProperty(a.key_name).IN(keys)
-            else: 
-                logging.info("Keys = %s" % str(keys))
-                filter = ndb.GenericProperty(a.key_name) == keys
-            future = get_futures_from_qry(a.target_fd,filter=filter, additional_filter=a.additional_filter, order=a.order)
-            target_key_futures.append(future)
-    else: 
-        target_key_futures.append(None)
+    if not isinstance(keys, types.ListType):
+        future = get_target_key_future(fd, keys,target_key_futures)
+    else:
+        for key in keys:
+            future = get_target_key_future(fd, key,target_key_futures)
     return target_key_futures
 
 def get_value_future(fd, future, key, keys, filter, additional_filter):
@@ -212,22 +210,19 @@ def recurse_attachments_with_future(attachments, futures, values, transform=tran
 def add_attachment_futures(attachments, futures, values):
     return apply(attachments, futures, values, add_attachment_future,{})
 
-def attach_target_key_values(fd, target_key_futures, values_dict, transform):
+def attach_target_key_values(fd, target_key_futures, values, transform):
     # append target_key objects to the lists that were pre-created earlier
-    for a in fd.target_key_attachments:
-        future = target_key_futures.pop(0)
-        if future:
+    if not isinstance(values, types.ListType):
+        for a in fd.target_key_attachments:
+            future = target_key_futures.pop(0)
             target_values = fetch_async(a.target_fd,future=future, transform=transform)
-            for value in target_values:
-                source_key = getattr(value, a.key_name)
-                source = values_dict[source_key]
-                target_attr=[]
-                if hasattr(source, a.name):
-                    target_attr = getattr(source, a.name)
-                else:
-                    setattr(source, a.name, target_attr)
-                target_attr.append(value)        
-
+            setattr(values, a.name, target_values)
+    else:
+        for value in values:
+            for a in fd.target_key_attachments:
+                future = target_key_futures.pop(0)
+                target_values = fetch_async(a.target_fd,future=future, transform=transform)
+                setattr(value, a.name, target_values)
                 
 def fetch_async(fd, future=None, key=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model):
     # If the datastore retrieve for this iteration is not already running, get it started now.
@@ -242,29 +237,28 @@ def fetch_async(fd, future=None, key=None, keys=None, filter=None, additional_fi
     # to appropriate objects after retrieval.
     if keys is not None:
         logging.info("Early target_key")
-        target_key_futures = get_target_key_futures(fd, keys)
+        target_key_futures = get_target_key_futures(fd,keys)
 
     # wait for the current objects to be available, then do any transformations to them.
     values=get_values_from_future(value_future)
     values = transform_model_list(values, transform=transform)
     
     k = get_keys(values)
-    values_dict=get_key_dict(values)
     
     # Start any queries that could not be started earlier 
     if keys is None:
         logging.info("Late target_key: %s" % k)
-        target_key_futures = get_target_key_futures(fd, k)
+        target_key_futures = get_target_key_futures(fd,k)
 
     add_attachment_futures(fd.source_key_attachments, source_key_futures, values)
     add_attachment_futures(fd.source_list_attachments, source_list_futures, values)
     
     # create the list attributes for target_key attachments.
-    populate_target_key_lists_for_values(values, fd.target_key_attachments)
+    #populate_target_key_lists_for_values(values, fd.target_key_attachments)
     
     recurse_attachments_with_future(fd.source_key_attachments, source_key_futures, values, transform=transform)
     recurse_attachments_with_future(fd.source_list_attachments, source_list_futures, values, transform=transform)
-    attach_target_key_values(fd, target_key_futures, values_dict, transform)
+    attach_target_key_values(fd, target_key_futures, values, transform)
         
     return values
 
@@ -273,8 +267,6 @@ def fetch_page_async(fd, page_size, start_cursor=None, filter=None, additional_f
     qry=get_qry_from_filter(fd, filter, additional_filter, order)
     values, next_curs, more = qry.fetch_page(page_size, start_cursor=start_cursor)
     k = get_keys(values)
-    values_dict=get_key_dict(values)
-    target_key_futures=[]
     source_list_futures=[]
     source_key_futures=[]
     target_key_futures = get_target_key_futures(fd, k)
@@ -285,7 +277,7 @@ def fetch_page_async(fd, page_size, start_cursor=None, filter=None, additional_f
     
     recurse_attachments_with_future(fd.source_key_attachments, source_key_futures, values, transform=transform)
     recurse_attachments_with_future(fd.source_list_attachments, source_list_futures, values, transform=transform)
-    attach_target_key_values(fd, target_key_futures, values_dict, transform)
+    attach_target_key_values(fd, target_key_futures, values, transform)
 
     
     return values, next_curs, more
