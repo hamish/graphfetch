@@ -187,7 +187,18 @@ def get_invoice(invoice_id):
 
 Graphfetch uses the ndb async methods to execute as much of the datastore activity in parallel as possible. Performance appears to be very good. A future enhancement #1 aims to provide a tasklet based implementation which may be faster in some complex situations.
 
-graphfetch does not set aside the need for thoughtful data model design. 
+Some indication of performance can be obtained by the following app stats reports. Both of these snapshots were taken after the objects had been pre-loaded into memcache (by fetching the same graph directly prior to the sample being taken):
+
+Async Implementation
+
+![Async Performance chart](https://github.com/hamish/graphfetch/raw/master/doc/async_perf.png "Async Performance")
+
+Basic Implementation
+
+![Basic Performance chart](https://github.com/hamish/graphfetch/raw/master/doc/basic_perf.png "Basic Performance")
+
+
+There will be times when knowledge of the datamodel allows the user to design a system that performs better than graphfetch.
 
 ## Testing
 Execute the unit tests by navigating into the graphfetch directory and then executing the following:
