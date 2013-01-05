@@ -200,12 +200,12 @@ We also measured both implementation directly after flushing memcache, the resul
 
 Async Implementation
 
-RPC Total: 2034 ms
+RPC Total: 2034 ms  
 Grand Total: 858 ms
 
 Basic Implementation
 
-RPC Total: 1544 ms
+RPC Total: 1544 ms  
 Grand Total: 1737 ms
 
 You can note that the wallclock time (Grand Total) is significantly lower when using the async api, however the RPC Total  is actually higher. This would equate to a better user experience, but at a higher resource cost. Graphfetch prioritizes execution time over resource cost, as this tends to allign with the best user experience.
