@@ -11,7 +11,7 @@
 {% endfor %}
 
 {% for a1 in a1s %}
-<a href='/querya1/{{a1.key.id()}}'>Query A1: {{a1.name}}<br>
+<a href='/querya1/{{a1.key.id()}}'>Query A1: {{a1.name}} (<a href='/querya1/{{a1.key.id()}}?impl=basic'>basic</a>)<br>
 {% endfor %}
 
 The code 

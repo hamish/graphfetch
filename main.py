@@ -55,7 +55,12 @@ class QueryRequestHandler(webapp2.RequestHandler):
         self.response.write("<a href='/'>Return to Start</a>")
 class A1QueryRequestHandler(webapp2.RequestHandler):
     def get(self, id):
-        a1=testmodels.get_a1(long(id))
+        impl = None
+        if self.request.get('impl', '')=='basic':
+            from graphfetch import basic_graphfetch
+            impl = basic_graphfetch.fetch_basic            
+            
+        a1=testmodels.get_a1(long(id), impl=impl)
         self.response.write((", ".join((o.name) for o in a1.b1s)) + "<br>")
         self.response.write((", ".join((o.name) for o in a1.b2s)) + "<br>")
         self.response.write((", ".join((o.name) for o in a1.b3s)) + "<br>")

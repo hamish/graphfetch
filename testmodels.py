@@ -78,10 +78,10 @@ def get_a1_by_key(id):
     key=ndb.Key(A1,id)
     return graphfetch.fetch(a1_fd, keys=key)
 
-def get_a1(id):
+def get_a1(id, impl=None):
     a1_fd = get_a1_fullfetchdef()
     key=ndb.Key(A1,long(id))
-    return graphfetch.fetch(a1_fd, key=key)
+    return graphfetch.fetch(a1_fd, key=key, impl=impl)
     
 
 def populate_test_data():
