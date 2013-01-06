@@ -18,7 +18,7 @@ def attach_target_key(attachment, result):
     children = fetch_basic(attachment.target_fd, filter=filter, additional_filter=attachment.additional_filter)
     setattr(result, attachment.name, children)
 
-def fetch_basic(fd, future=None, key=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model):
+def fetch_basic(fd, future=None, key=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model, limit=None, offset=0):
     results=[]
     if keys is not None:
         results = ndb.get_multi(keys)
@@ -32,7 +32,7 @@ def fetch_basic(fd, future=None, key=None, keys=None, filter=None, additional_fi
             qry=qry.filter(additional_filter)
         if order is not None:
             qry = qry.order(order)
-        results =qry.fetch()
+        results =qry.fetch(limit=limit, offset=offset)
     
     for attachment in fd.source_list_attachments:
         if isinstance(results, types.ListType):

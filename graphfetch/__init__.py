@@ -84,12 +84,12 @@ class FetchDefinition():
             raise Exception("Fetch.attach called with invalid type parameter: [%s]" %(attachment_type))
         return target_fd
 
-def fetch(fd, future=None, key=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model, impl=None):
+def fetch(fd, future=None, key=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model, impl=None, limit=None, offset=0):
     if not impl:
         from .async_graphfetch import fetch_async
         impl = fetch_async
         
-    return impl(fd, future=future, key=key, keys=keys, filter=filter, additional_filter=additional_filter, order=order, transform=transform)
+    return impl(fd, future=future, key=key, keys=keys, filter=filter, additional_filter=additional_filter, order=order, transform=transform, limit=limit, offset=offset)
 
 def fetch_page(fd, page_size, start_cursor=None, filter=None, additional_filter=None, order=None, transform=transform_model, impl=None):
     if not impl:

@@ -39,10 +39,10 @@ def get_qry_from_filter(fd, filter, additional_filter=None, order=None):
     if order is not None:
         qry=qry.order(order)
     return qry
-def get_futures_from_qry(fd, filter, additional_filter=None, order=None):
+def get_futures_from_qry(fd, filter, additional_filter=None, order=None, limit=None, offset=0):
     qry=get_qry_from_filter(fd, filter, additional_filter, order)
     logging.info("get_futures_from_qry: %s" % str(qry))
-    values=qry.fetch_async()
+    values=qry.fetch_async(limit, offset=offset)
     return values
 
 def get_futures_from_keys(fd, keys):
@@ -67,7 +67,7 @@ def get_target_key_futures(fd, keys):
             future = get_target_key_future(fd, key,target_key_futures)
     return target_key_futures
 
-def get_value_future(fd, future, key, keys, filter, additional_filter):
+def get_value_future(fd, future, key, keys, filter, additional_filter, order, limit=None, offset=0):
     value_future = None
     if future is not None:
         logging.info("gvf: future")
@@ -80,7 +80,7 @@ def get_value_future(fd, future, key, keys, filter, additional_filter):
         value_future=get_futures_from_keys(fd, keys)
     else:
         logging.info("gvf: filter")
-        value_future= get_futures_from_qry(fd, filter, additional_filter)
+        value_future= get_futures_from_qry(fd, filter, additional_filter, order, limit, offset)
     return value_future
 
 def get_key_dict(values):
@@ -160,9 +160,9 @@ def attach_target_key_values(fd, target_key_futures, values, transform):
                 target_values = fetch_async(a.target_fd,future=future, transform=transform)
                 setattr(value, a.name, target_values)
                 
-def fetch_async(fd, future=None, key=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model):
+def fetch_async(fd, future=None, key=None, keys=None, filter=None, additional_filter=None, order=None, transform=transform_model, limit=None, offset=0):
     # If the datastore retrieve for this iteration is not already running, get it started now.
-    value_future = get_value_future(fd, future, key, keys, filter, additional_filter)
+    value_future = get_value_future(fd, future, key, keys, filter, additional_filter, order=order, limit=limit, offset=offset)
 
     target_key_futures=[]
     source_list_futures=[]
