@@ -122,6 +122,8 @@ def recurse_attachment_with_future(attachment, futures, value, transform=transfo
             return
     target_values=fetch_async(attachment.target_fd, future=future,transform=transform)
     logging.info("setting %s" % attachment.name)
+    if attachment.attachment_type==SOURCE_LIST and attachment.sort_key is not None:
+        target_values.sort(key=attachment.sort_key)
     setattr(value, attachment.name, target_values)
 
 def add_attachment_future(attachment, futures, value):    

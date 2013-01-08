@@ -3,7 +3,7 @@ import sys
 import unittest
 import types
 import logging
-from graphfetch import fetch, fetch_page, FetchDefinition
+from graphfetch import fetch, fetch_page, FetchDefinition, SOURCE_LIST, SOURCE_KEY, TARGET_KEY
 import testmodels, orders
 from google.appengine.ext import ndb
 
@@ -107,6 +107,7 @@ class FullGraphFetchTests(GraphFetchTests):
             val = getattr(o,name)
             val_len = len(val)
             self.assertTrue(val_len == length, "attribute %s length is %d  not %d" %(name, val_len, length))
+
     def assertFullGraphResults(self, results):
         self.assertTrue(isinstance(results, types.ListType), "results should be a list")
         self.assertEqual(len(results), 1, "too many results")
@@ -123,7 +124,7 @@ class FullGraphFetchTests(GraphFetchTests):
         d_names = ["d%ds"%i for i in range(1,6)]
         self.assertAllAreType(a1, d_names, types.ListType)
         self.assertAllAreLength(a1, d_names, 5)
-        
+                
     def testFullGraph(self):
         fd=testmodels.get_a1_fullfetchdef()
         filter=testmodels.A1.name=='Full Graph'
@@ -158,6 +159,46 @@ class FullGraphFetchTests(GraphFetchTests):
 
         self.assertTrue(a1.d1s[0].testattr, "testattr should be set to true by custom_transform")
         self.assertFalse(hasattr(a1.d1s[0],'id'), "id attribute has been set even though the custom transform was used.")
+
+class SortTests(GraphFetchTests):
+    def setUp(self):
+        super(SortTests, self).setUp()
+        global Source, Target
+        class Source(ndb.Model):
+            name = ndb.StringProperty()
+            target_keys = ndb.KeyProperty(repeated=True)
+        class Target(ndb.Model):
+            name=ndb.StringProperty()
+            order=ndb.IntegerProperty()
+        self.create_entities()
+        #testmodels.populate_test_data()
+        
+    def create_entities(self):
+        self.t1 = Target(id=1, name='t1', order=1)
+        self.t1.put()
+        self.t2 = Target(id=2, name='t2', order=2)
+        self.t2.put()
+        self.t3 = Target(id=3, name='t3', order=3)
+        self.t3.put()
+        
+        self.source = Source(id=100, name='source', target_keys=[self.t2.key, self.t1.key, self.t3.key])
+        self.source.put()
+
+    def testSortKeyBasicImpl(self):
+        from graphfetch import basic_graphfetch
+        fd = FetchDefinition(testmodels.A1)
+        fd.attach(kind=Target, attachment_type=SOURCE_LIST, sort_key=lambda elem: elem.order)
+        key=ndb.Key(Source, 100)
+        s1=fetch(fd, key=key, impl=basic_graphfetch.fetch_basic)
+        self.assertEqual(s1.targets[0].name, 't1')
+    
+    def testSortKey(self):
+        from graphfetch import basic_graphfetch
+        fd = FetchDefinition(testmodels.A1)
+        fd.attach(kind=Target, attachment_type=SOURCE_LIST, sort_key=lambda elem: elem.order)
+        key=ndb.Key(Source, 100)
+        s1=fetch(fd, key=key)
+        self.assertEqual(s1.targets[0].name, 't1')
 
 class OrderGraphFetchTests(GraphFetchTests):
     def setUp(self):

@@ -5,6 +5,8 @@ import types
 def attach_source_list(attachment, result):
     child_keys = getattr(result, attachment.key_name)
     children = fetch_basic(attachment.target_fd, keys=child_keys)
+    if attachment.sort_key is not None:
+        children.sort(key=attachment.sort_key)
     setattr(result, attachment.name, children)
 def attach_source_key(attachment, result):
     child_key = getattr(result, attachment.key_name)

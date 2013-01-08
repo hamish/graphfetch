@@ -49,7 +49,7 @@ class FetchDefinition():
         self.source_key_attachments=[]
         
     class Attachment():
-        def __init__(self, target_fd, name, key_name, attachment_type, additional_filter=None, order=None):
+        def __init__(self, target_fd, name, key_name, attachment_type, additional_filter=None, order=None, sort_key=None):
             #logging.info("Attachment: %s %s %s %s" %(target_fd, name, key_name, additional_filter))
             self.target_fd = target_fd
             self.name=name
@@ -57,8 +57,9 @@ class FetchDefinition():
             self.additional_filter=additional_filter
             self.attachment_type=attachment_type
             self.order=order
+            self.sort_key=sort_key
         
-    def attach(self, kind, attachment_type, name=None, key_name=None, additional_filter=None, order=None):
+    def attach(self, kind, attachment_type, name=None, key_name=None, additional_filter=None, order=None, sort_key=None):
         target_fd = FetchDefinition(kind)
         kind_name=kind.__name__.lower()
         if attachment_type == SOURCE_LIST:
@@ -66,20 +67,20 @@ class FetchDefinition():
                 name="%ss" % kind_name
             if key_name is None:
                 key_name = "%s_keys" % kind_name
-            self.source_list_attachments.append(FetchDefinition.Attachment(target_fd, name, key_name, attachment_type, additional_filter, order))
+            self.source_list_attachments.append(FetchDefinition.Attachment(target_fd, name, key_name, attachment_type, additional_filter, order, sort_key))
         elif attachment_type == TARGET_KEY:
             if name is None:
                 name="%ss" % kind_name
             if key_name is None:
                 source_kind_name = self.kind.__name__.lower()
                 key_name="%s_key" % source_kind_name
-            self.target_key_attachments.append(FetchDefinition.Attachment(target_fd, name, key_name, attachment_type, additional_filter, order))
+            self.target_key_attachments.append(FetchDefinition.Attachment(target_fd, name, key_name, attachment_type, additional_filter, order, sort_key))
         elif attachment_type== SOURCE_KEY:
             if name is None:
                 name="%s" % kind_name
             if key_name is None:
                 key_name = "%s_key" % kind_name
-            self.source_key_attachments.append(FetchDefinition.Attachment(target_fd, name, key_name, attachment_type, additional_filter, order))
+            self.source_key_attachments.append(FetchDefinition.Attachment(target_fd, name, key_name, attachment_type, additional_filter, order, sort_key))
         else:
             raise Exception("Fetch.attach called with invalid type parameter: [%s]" %(attachment_type))
         return target_fd
