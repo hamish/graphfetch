@@ -55,7 +55,9 @@ def get_futures_from_keys(fd, keys):
 
 def get_target_key_future(fd, key, target_key_futures):
     for a in fd.target_key_attachments:
-        filter = ndb.GenericProperty(a.key_name) == key
+        prop=ndb.GenericProperty()
+        prop._name=a.key_name
+        filter = prop == key
         future = get_futures_from_qry(a.target_fd,filter=filter, additional_filter=a.additional_filter, order=a.order)
         target_key_futures.append(future)
 def get_target_key_futures(fd, keys):

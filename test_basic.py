@@ -92,6 +92,33 @@ class BasicFetchTests(GraphFetchTests):
         foo = fetch(fd, filter=Foo.name=='joe')[0]
         self.assertEqual(foo.name, 'joe', "name incorrect")
 
+class StructuredFetchTests(GraphFetchTests):
+    def setUp(self):
+        super(StructuredFetchTests, self).setUp()
+        global Foo
+        class Foo(ndb.Model):
+            name=ndb.StringProperty()
+        global Bar
+        class Bar(ndb.Model):
+            foos=ndb.StructuredProperty(Foo, repeated=True)
+            
+        foo1=Foo(name="foo1")
+        foo2=Foo(name="foo2")
+        bar=Bar()
+        bar.foos.append(foo1)
+        bar.foos.append(foo1)
+        bar.put()
+        
+    def testStructuredQuery(self):
+        results = Bar.query(Bar.foos.name=="foo1").fetch()
+        self.assertTrue(len(results) == 1)
+        
+    def testStructuredQueryGenericProperty(self):
+        p = ndb.GenericProperty()
+        p._name="foos.name"
+        results = Bar.query(p=="foo1").fetch()
+        self.assertTrue(len(results) == 1)
+
 class FullGraphFetchTests(GraphFetchTests):
     def setUp(self):
         super(FullGraphFetchTests, self).setUp()
