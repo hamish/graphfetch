@@ -118,7 +118,49 @@ class StructuredFetchTests(GraphFetchTests):
         p._name="foos.name"
         results = Bar.query(p=="foo1").fetch()
         self.assertTrue(len(results) == 1)
+    
 
+class BrokenGraphTests(GraphFetchTests):
+    def setUp(self):
+        super(BrokenGraphTests, self).setUp()
+        global Source, Target
+        class Source(ndb.Model):
+            name = ndb.StringProperty()
+            target_keys = ndb.KeyProperty(repeated=True)
+            
+        class Target(ndb.Model):
+            name=ndb.StringProperty()
+            order=ndb.IntegerProperty()
+            source_key=ndb.KeyProperty()
+            
+    def testBrokenSourceKeyReference(self):
+        tbd = Source(name="to be deleted")
+        tbd.put()
+        
+        target = Target(name="target", source_key=tbd.key)
+        target.put()
+        
+        tbd.key.delete()
+        
+        fd=FetchDefinition(Target)
+        fd.attach(Source, SOURCE_KEY)
+        result = fetch(fd, key=target.key, transform=lambda x: x)
+        self.assertIsNone(result.source)
+        
+    def testBrokenSourceListReference(self):
+        tbd = Target(name="to be deleted")
+        tbd.put()
+        source = Source(name="source")
+        source.target_keys.append(tbd.key)
+        source.put()
+        tbd.key.delete()
+        
+        fd=FetchDefinition(Source)
+        fd.attach(Target, SOURCE_LIST)
+        result = fetch(fd, key=source.key, transform=lambda x: x)
+        self.assertEqual(result.targets, [])
+        
+        
 class FullGraphFetchTests(GraphFetchTests):
     def setUp(self):
         super(FullGraphFetchTests, self).setUp()

@@ -183,6 +183,8 @@ def fetch_async(fd, future=None, key=None, keys=None, filter=None, additional_fi
     values=get_values_from_future(value_future)
     values = transform_model_list(values, transform=transform)
     
+    if values is None:
+        return None
     k = get_keys(values)
     
     # Start any queries that could not be started earlier 

@@ -29,7 +29,7 @@ def transform_model(instance):
 
 def transform_model_list(entities, transform=transform_model):
     if isinstance(entities, types.ListType):
-        return [transform(e) for e in entities]
+        return [transform(e) for e in entities if e is not None]
     else:
         return transform(entities)
 
